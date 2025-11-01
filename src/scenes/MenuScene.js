@@ -207,8 +207,35 @@ export default class MenuScene extends Phaser.Scene {
     // Показываем модальное окно подтверждения
     const width = this.screenWidth;
     const height = this.screenHeight;
-    const modalWidth = Math.min(width - 100, 700);
-    const modalHeight = Math.min(height - 200, 400);
+    const modalWidth = Math.min(width - 120, 620);
+    const modalPadding = this.isMobile ? 24 : 36;
+    const sectionGap = this.isMobile ? 22 : 28;
+    const buttonHeight = this.isMobile ? 60 : 70;
+
+    const confirmText =
+      'При запуске игры заново,\nсохранение вашего игрового\nпроцесса будет потеряно.\n\nВы уверены, что хотите\nначать новую игру?';
+
+    const textStyle = {
+      fontSize: this.isMobile ? '24px' : '28px',
+      color: '#2F4858',
+      fontFamily: 'Arial',
+      align: 'center',
+      lineSpacing: 6,
+      wordWrap: { width: modalWidth - modalPadding * 2 }
+    };
+
+    const textMetrics = this.make.text({
+      text: confirmText,
+      style: textStyle,
+      add: false
+    });
+    const textHeight = textMetrics.height;
+    textMetrics.destroy();
+
+    const neededHeight = modalPadding * 2 + textHeight + sectionGap + buttonHeight;
+    const minModalHeight = this.isMobile ? 340 : 360;
+    const maxModalHeight = height - (this.isMobile ? 40 : 80);
+    const modalHeight = Math.min(Math.max(neededHeight, minModalHeight), maxModalHeight);
     const modalX = width / 2 - modalWidth / 2;
     const modalY = height / 2 - modalHeight / 2;
 
@@ -235,26 +262,41 @@ export default class MenuScene extends Phaser.Scene {
     modalBg.strokeRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
     container.add(modalBg);
 
-    // Текст
-    const text = this.add.text(
-      width / 2,
-      modalY + 80,
-      'При запуске игры заново,\nсохранение вашего игрового\nпроцесса будет потеряно.\n\nВы уверены, что хотите\nначать новую игру?',
-      {
-        fontSize: this.isMobile ? '24px' : '28px',
-        color: '#2F4858',
-        fontFamily: 'Arial',
-        align: 'center',
-        lineSpacing: 8
-      }
-    ).setOrigin(0.5, 0);
+    // Блок с текстом
+    const textBlockTop = modalY + modalPadding;
+    const textBg = this.add.graphics();
+    textBg.fillStyle(0xffffff, 0.12);
+    textBg.fillRoundedRect(
+      modalX + 20,
+      textBlockTop - 16,
+      modalWidth - 40,
+      textHeight + 32,
+      16
+    );
+    container.add(textBg);
+
+    const text = this.add
+      .text(width / 2, textBlockTop, confirmText, textStyle)
+      .setOrigin(0.5, 0);
     container.add(text);
 
+    // Блок с кнопками
+    const buttonAreaTop = modalY + modalHeight - modalPadding - buttonHeight - 32;
+    const buttonsBg = this.add.graphics();
+    buttonsBg.fillStyle(0xffffff, 0.08);
+    buttonsBg.fillRoundedRect(
+      modalX + 20,
+      buttonAreaTop,
+      modalWidth - 40,
+      buttonHeight + 52,
+      16
+    );
+    container.add(buttonsBg);
+
     // Кнопки
-    const buttonWidth = 200;
-    const buttonHeight = 70;
-    const buttonY = modalY + modalHeight - 100;
-    const spacing = 50;
+    const buttonWidth = Math.min(220, modalWidth / 2 - 10);
+    const buttonY = modalY + modalHeight - modalPadding - buttonHeight / 2;
+    const spacing = this.isMobile ? 30 : 40;
 
     // Кнопка "Да"
     this.createConfirmButton(
