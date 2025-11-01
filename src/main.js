@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
+import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
 import WinScene from './scenes/WinScene.js';
+import { VKBridge } from './utils/VKBridge.js';
 
 const MOBILE_PORTRAIT_SIZE = { width: 1080, height: 1920 };
 const MOBILE_LANDSCAPE_SIZE = { width: 1920, height: 1080 };
@@ -28,7 +30,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [GameScene, WinScene],
+  scene: [MenuScene, GameScene, WinScene],
   backgroundColor: '#1a1a2e',
   pixelArt: false,
   antialias: true
@@ -38,6 +40,12 @@ const config = {
 window.addEventListener('contextmenu', (e) => {
   e.preventDefault();
 });
+
+// Initialize VK Bridge and preload ads before starting the game
+(async () => {
+  await VKBridge.init();
+  await VKBridge.preloadRewardAd();
+})();
 
 const game = new Phaser.Game(config);
 

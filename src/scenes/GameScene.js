@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { MapParser } from '../utils/MapParser.js';
 import { GameProgress } from '../utils/GameProgress.js';
+import { VKBridge } from '../utils/VKBridge.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -24,9 +25,9 @@ export default class GameScene extends Phaser.Scene {
     this.correctHouseTexturesAvailable = false;
   }
 
-  init(data = {}) {
-    // Try to load saved level from localStorage first
-    const savedLevel = GameProgress.loadLevel();
+  async init(data = {}) {
+    // Try to load saved level from VK Storage/localStorage
+    const savedLevel = await GameProgress.loadLevel();
     this.startMapIndex = data.mapIndex ?? savedLevel ?? 0;
     this.isMobile = !this.sys.game.device.os.desktop;
     this.currentOrientation =
@@ -305,7 +306,7 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  loadMap(index) {
+  async loadMap(index) {
     // Очищаем предыдущую карту
     this.clearMap();
 
@@ -314,8 +315,8 @@ export default class GameScene extends Phaser.Scene {
     this.hintCounter = 0;
     this.houseCount = 0;
 
-    // Сохраняем прогресс в localStorage
-    GameProgress.saveLevel(index);
+    // Сохраняем прогресс в VK Storage и localStorage
+    await GameProgress.saveLevel(index);
 
     // Обновляем счетчик уровня
     if (this.levelText) {
@@ -1276,11 +1277,11 @@ export default class GameScene extends Phaser.Scene {
     );
 
     this.hintButton.setInteractive(interactiveRect, Phaser.Geom.Rectangle.Contains);
-    this.hintButton.on('pointerdown', () => this.useHint());
+    this.hintButton.on('pointerdown', () => this.useHintWithAd());
     this.hintButton.on('pointerover', () => this.drawHintButtonState('hover'));
     this.hintButton.on('pointerout', () => this.drawHintButtonState('default'));
 
-    const buttonLabel = config.label ?? 'Подсказка';
+    const buttonLabel = config.label ?? '📹 Подсказка';
     this.hintButtonLabel = this.add.text(config.x, config.y, buttonLabel, config.textStyle).setOrigin(0.5);
   }
 
@@ -2001,6 +2002,16 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  async useHintWithAd() {
+    // Показываем reward рекламу
+    const adShown = await VKBridge.showRewardAd();
+
+    // Если реклама была успешно показана, выполняем действие подсказки
+    if (adShown) {
+      this.useHint();
+    }
+  }
+
   useHint() {
     if (this.hintCounter >= 8) {
       return;
@@ -2048,7 +2059,10 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  clearField() {
+  async clearField() {
+    // Показываем interstitial рекламу
+    await VKBridge.showInterstitialAd();
+
     // Создаем копию массива домов, чтобы избежать проблем при удалении
     const housesToRemove = [...this.houses];
 
@@ -2078,39 +2092,149 @@ export default class GameScene extends Phaser.Scene {
   showVictory() {
     // Создаем салют
     this.createFireworks();
-    
-    // Показываем сообщение
-    const victoryText = this.add.text(
-      960,
-      400,
+
+    // Показываем модальное окно
+    this.time.delayedCall(500, () => {
+      this.showLevelCompleteModal();
+    });
+  }
+
+  showLevelCompleteModal() {
+    const width = this.screenWidth;
+    const height = this.screenHeight;
+    const modalWidth = Math.min(width - 100, 700);
+    const modalHeight = Math.min(height - 200, 400);
+    const modalX = width / 2 - modalWidth / 2;
+    const modalY = height / 2 - modalHeight / 2;
+
+    // Создаем контейнер для модального окна
+    this.levelCompleteContainer = this.add.container(0, 0);
+    this.levelCompleteContainer.setDepth(2000);
+
+    // Полупрозрачный фон
+    const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7);
+    overlay.setOrigin(0, 0);
+    overlay.setInteractive();
+    this.levelCompleteContainer.add(overlay);
+
+    // Тень модального окна
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(modalX + 15, modalY + 15, modalWidth, modalHeight, 20);
+    this.levelCompleteContainer.add(shadow);
+
+    // Основной фон модального окна
+    const modalBg = this.add.graphics();
+    modalBg.fillStyle(0xF6F0E6, 0.98);
+    modalBg.fillRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
+    modalBg.lineStyle(4, 0xFFD700, 1);
+    modalBg.strokeRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
+    this.levelCompleteContainer.add(modalBg);
+
+    // Заголовок
+    const titleText = this.add.text(
+      width / 2,
+      modalY + 60,
       'Уровень пройден!',
       {
-        fontSize: '72px',
+        fontSize: '48px',
         color: '#FFD700',
-        fontFamily: 'Arial',
-        fontStyle: 'bold'
+        fontFamily: 'Georgia',
+        fontStyle: 'bold',
+        stroke: '#9B2226',
+        strokeThickness: 3
       }
     ).setOrigin(0.5);
-    
-    victoryText.setScale(0);
-    this.tweens.add({
-      targets: victoryText,
-      scale: 1,
-      duration: 500,
-      ease: 'Back.easeOut'
-    });
-    
-    // Переход на следующий уровень
-    this.time.delayedCall(3000, () => {
-      victoryText.destroy();
-      
-      if (this.currentMapIndex < this.maps.length - 1) {
-        this.loadMap(this.currentMapIndex + 1);
-      } else {
-        // Все уровни пройдены
-        this.scene.start('WinScene');
+    this.levelCompleteContainer.add(titleText);
+
+    // Кнопка "Перейти на следующий уровень"
+    const buttonWidth = modalWidth - 100;
+    const buttonHeight = 80;
+    const buttonX = width / 2;
+    const buttonY = modalY + modalHeight - 100;
+
+    const nextLevelButton = this.add.graphics();
+    const drawButton = (state) => {
+      const colors = state === 'hover'
+        ? [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690]
+        : [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965];
+
+      nextLevelButton.clear();
+      nextLevelButton.fillGradientStyle(colors[0], colors[1], colors[2], colors[3], 1);
+      nextLevelButton.fillRoundedRect(
+        buttonX - buttonWidth / 2,
+        buttonY - buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        16
+      );
+      nextLevelButton.lineStyle(3, 0x9B2226, 1);
+      nextLevelButton.strokeRoundedRect(
+        buttonX - buttonWidth / 2,
+        buttonY - buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        16
+      );
+    };
+
+    drawButton('default');
+
+    const buttonRect = new Phaser.Geom.Rectangle(
+      buttonX - buttonWidth / 2,
+      buttonY - buttonHeight / 2,
+      buttonWidth,
+      buttonHeight
+    );
+
+    nextLevelButton.setInteractive(buttonRect, Phaser.Geom.Rectangle.Contains);
+    nextLevelButton.on('pointerdown', () => this.goToNextLevelWithAd());
+    nextLevelButton.on('pointerover', () => drawButton('hover'));
+    nextLevelButton.on('pointerout', () => drawButton('default'));
+    this.levelCompleteContainer.add(nextLevelButton);
+
+    const buttonLabel = this.add.text(
+      buttonX,
+      buttonY,
+      'Перейти на следующий уровень',
+      {
+        fontSize: '28px',
+        color: '#F6F0E6',
+        fontFamily: 'Arial',
+        fontStyle: 'bold',
+        stroke: '#9B2226',
+        strokeThickness: 2
       }
+    ).setOrigin(0.5);
+    this.levelCompleteContainer.add(buttonLabel);
+
+    // Анимация появления
+    this.levelCompleteContainer.setAlpha(0);
+    this.tweens.add({
+      targets: this.levelCompleteContainer,
+      alpha: 1,
+      duration: 300,
+      ease: 'Power2'
     });
+  }
+
+  async goToNextLevelWithAd() {
+    // Показываем interstitial рекламу
+    await VKBridge.showInterstitialAd();
+
+    // Закрываем модальное окно
+    if (this.levelCompleteContainer) {
+      this.levelCompleteContainer.destroy();
+      this.levelCompleteContainer = null;
+    }
+
+    // Переходим на следующий уровень
+    if (this.currentMapIndex < this.maps.length - 1) {
+      await this.loadMap(this.currentMapIndex + 1);
+    } else {
+      // Все уровни пройдены
+      this.scene.start('WinScene');
+    }
   }
 
   createFireworks() {
