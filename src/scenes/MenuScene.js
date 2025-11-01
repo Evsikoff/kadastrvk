@@ -333,8 +333,8 @@ export default class MenuScene extends Phaser.Scene {
     container.add(title);
 
     // Создаем тайлы уровней
-    const tileSize = this.isMobile ? 70 : 80;
-    const tileGap = this.isMobile ? 10 : 15;
+    const tileSize = this.isMobile ? 55 : 65;
+    const tileGap = this.isMobile ? 8 : 10;
     const tilesPerRow = Math.floor((modalWidth - 60) / (tileSize + tileGap));
     const startX = modalX + 30;
     const startY = modalY + 100;
@@ -429,7 +429,9 @@ export default class MenuScene extends Phaser.Scene {
     drawTile('default');
 
     if (isAvailable) {
-      const rect = new Phaser.Geom.Rectangle(x - size / 2, y - size / 2, size, size);
+      // Делаем интерактивную область немного меньше для предотвращения перекрытий
+      const interactiveSize = size - 2;
+      const rect = new Phaser.Geom.Rectangle(x - interactiveSize / 2, y - interactiveSize / 2, interactiveSize, interactiveSize);
       tile.setInteractive(rect, Phaser.Geom.Rectangle.Contains);
       tile.on('pointerdown', () => {
         container.destroy();
@@ -442,7 +444,7 @@ export default class MenuScene extends Phaser.Scene {
     container.add(tile);
 
     const label = this.add.text(x, y, level.toString(), {
-      fontSize: this.isMobile ? '24px' : '28px',
+      fontSize: this.isMobile ? '20px' : '24px',
       color: isAvailable ? '#F6F0E6' : '#CCCCCC',
       fontFamily: 'Arial',
       fontStyle: 'bold'

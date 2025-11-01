@@ -1511,7 +1511,7 @@ export default class GameScene extends Phaser.Scene {
     const width = this.screenWidth;
     const height = this.screenHeight;
     const modalWidth = Math.min(width - 100, 700);
-    const modalHeight = Math.min(height - 200, 400);
+    const modalHeight = Math.min(height - 150, 500);
     const modalX = width / 2 - modalWidth / 2;
     const modalY = height / 2 - modalHeight / 2;
 
@@ -1530,7 +1530,7 @@ export default class GameScene extends Phaser.Scene {
     shadow.fillRoundedRect(modalX + 15, modalY + 15, modalWidth, modalHeight, 20);
     container.add(shadow);
 
-    // Фон
+    // Фон модального окна
     const modalBg = this.add.graphics();
     modalBg.fillStyle(0xF6F0E6, 0.98);
     modalBg.fillRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
@@ -1538,25 +1538,36 @@ export default class GameScene extends Phaser.Scene {
     modalBg.strokeRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
     container.add(modalBg);
 
+    // Блок с текстом (верхняя часть)
+    const textBlockHeight = modalHeight * 0.6;
+    const textBg = this.add.graphics();
+    textBg.fillStyle(0xFFFFFF, 0.3);
+    textBg.fillRoundedRect(modalX + 20, modalY + 20, modalWidth - 40, textBlockHeight - 20, 15);
+    container.add(textBg);
+
     // Текст
     const text = this.add.text(
       width / 2,
-      modalY + 100,
+      modalY + textBlockHeight / 2,
       'Вы уверены, что хотите\nвернуться в главное меню?\n\nТекущий прогресс на этом\nуровне будет потерян.',
       {
-        fontSize: this.isMobile ? '24px' : '28px',
+        fontSize: this.isMobile ? '22px' : '26px',
         color: '#2F4858',
         fontFamily: 'Arial',
         align: 'center',
-        lineSpacing: 8
+        lineSpacing: 10
       }
-    ).setOrigin(0.5, 0);
+    ).setOrigin(0.5);
     container.add(text);
+
+    // Блок с кнопками (нижняя часть)
+    const buttonBlockY = modalY + textBlockHeight;
+    const buttonBlockHeight = modalHeight - textBlockHeight;
 
     // Кнопки
     const buttonWidth = 200;
     const buttonHeight = 70;
-    const buttonY = modalY + modalHeight - 100;
+    const buttonY = buttonBlockY + buttonBlockHeight / 2;
     const spacing = 50;
 
     // Кнопка "Да"
