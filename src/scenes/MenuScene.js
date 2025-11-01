@@ -42,6 +42,10 @@ export default class MenuScene extends Phaser.Scene {
     const tileScaleY = this.screenHeight / (backgroundSource.height * tilesY);
     bg.setTileScale(tileScaleX, tileScaleY);
 
+    if (bg.preFX) {
+      bg.preFX.addBlur(1, 4, 4, 1.5);
+    }
+
     // Парсим карты для получения количества уровней
     const mapData = this.cache.text.get('maps');
     this.maps = MapParser.parseMapFile(mapData);
