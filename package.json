@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vkontakte/vk-bridge": "^2.15.9",
     "phaser": "^3.80.1"
   },
   "devDependencies": {
