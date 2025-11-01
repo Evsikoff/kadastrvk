@@ -146,13 +146,61 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
   }
 
-  async continueGame() {
-    // Загружаем сохраненный уровень
-    const savedLevel = await GameProgress.loadLevel();
-    const startLevel = savedLevel ?? 0;
+  async showLoadingOverlay(action) {
+    const width = this.screenWidth;
+    const height = this.screenHeight;
 
-    // Запускаем игру с сохраненного уровня
-    this.scene.start('GameScene', { mapIndex: startLevel });
+    const container = this.add.container(0, 0);
+    container.setDepth(10000);
+
+    const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.65);
+    overlay.setOrigin(0, 0);
+    overlay.setInteractive();
+    container.add(overlay);
+
+    const loadingText = this.add.text(width / 2, height / 2 - 40, 'Загрузка', {
+      fontSize: this.isMobile ? '40px' : '48px',
+      color: '#FFFFFF',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    container.add(loadingText);
+
+    const spinner = this.add.graphics({ x: width / 2, y: height / 2 + 40 });
+    spinner.lineStyle(6, 0xFFFFFF, 1);
+    spinner.beginPath();
+    spinner.arc(0, 0, 35, Phaser.Math.DegToRad(0), Phaser.Math.DegToRad(300), false);
+    spinner.strokePath();
+    container.add(spinner);
+
+    const spinTween = this.tweens.add({
+      targets: spinner,
+      angle: 360,
+      duration: 800,
+      repeat: -1
+    });
+
+    return new Promise((resolve) => {
+      this.time.delayedCall(3000, async () => {
+        if (action) {
+          await action();
+        }
+        spinTween.stop();
+        container.destroy();
+        resolve();
+      });
+    });
+  }
+
+  async continueGame() {
+    await this.showLoadingOverlay(async () => {
+      // Загружаем сохраненный уровень
+      const savedLevel = await GameProgress.loadLevel();
+      const startLevel = savedLevel ?? 0;
+
+      // Запускаем игру с сохраненного уровня
+      this.scene.start('GameScene', { mapIndex: startLevel });
+    });
   }
 
   showNewGameConfirm() {
@@ -217,8 +265,10 @@ export default class MenuScene extends Phaser.Scene {
       'Да',
       async () => {
         container.destroy();
-        await GameProgress.clearProgress();
-        this.scene.start('GameScene', { mapIndex: 0 });
+        await this.showLoadingOverlay(async () => {
+          await GameProgress.clearProgress();
+          this.scene.start('GameScene', { mapIndex: 0 });
+        });
       },
       container,
       [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
