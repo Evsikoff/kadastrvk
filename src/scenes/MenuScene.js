@@ -432,7 +432,6 @@ export default class MenuScene extends Phaser.Scene {
     const tileSize = this.isMobile ? 55 : 65;
     const tileGap = this.isMobile ? 8 : 10;
     const tilesPerRow = Math.floor((modalWidth - 60) / (tileSize + tileGap));
-    const startX = modalX + 30;
     const startY = modalY + 100;
 
     const totalLevels = Math.min(this.maps.length, 100);
@@ -440,7 +439,10 @@ export default class MenuScene extends Phaser.Scene {
     for (let i = 0; i < totalLevels; i++) {
       const row = Math.floor(i / tilesPerRow);
       const col = i % tilesPerRow;
-      const x = startX + col * (tileSize + tileGap) + tileSize / 2;
+      const rowTileCount = Math.min(tilesPerRow, totalLevels - row * tilesPerRow);
+      const rowWidth = rowTileCount * tileSize + Math.max(rowTileCount - 1, 0) * tileGap;
+      const rowStartX = modalX + (modalWidth - rowWidth) / 2 + tileSize / 2;
+      const x = rowStartX + col * (tileSize + tileGap);
       const y = startY + row * (tileSize + tileGap) + tileSize / 2;
 
       const isAvailable = i <= maxAvailableLevel;
