@@ -23,6 +23,8 @@ export default class GameScene extends Phaser.Scene {
     this.cellTexturesAvailable = false;
     this.baseHouseTexturesAvailable = false;
     this.correctHouseTexturesAvailable = false;
+    this.spinner = null;
+    this.spinnerContainer = null;
   }
 
   async init(data = {}) {
@@ -288,6 +290,7 @@ export default class GameScene extends Phaser.Scene {
     this.maps = MapParser.parseMapFile(mapData);
 
     this.createUI();
+    this.createSpinner();
 
     this.loadMap(this.startMapIndex);
 
@@ -491,6 +494,7 @@ export default class GameScene extends Phaser.Scene {
     this.createHintButton(this.layout);
     this.createClearButton(this.layout);
     this.createStatsSection(this.layout);
+    this.createBurgerButton(this.layout);
 
     // Для mobile-portrait создаем кнопки вместо панелей
     if (this.layout.type === 'mobile-portrait') {
@@ -1446,6 +1450,186 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  createBurgerButton(layout) {
+    const buttonSize = this.isMobile ? 60 : 70;
+    const margin = 20;
+
+    // Позиционируем кнопку в верхнем левом углу
+    const buttonX = margin + buttonSize / 2;
+    const buttonY = margin + buttonSize / 2;
+
+    // Создаем круглую кнопку
+    const burgerButton = this.add.graphics();
+    burgerButton.fillStyle(0x3A7CA5, 0.95);
+    burgerButton.fillCircle(buttonX, buttonY, buttonSize / 2);
+    burgerButton.lineStyle(3, 0x1B4965, 1);
+    burgerButton.strokeCircle(buttonX, buttonY, buttonSize / 2);
+
+    // Создаем иконку бургера (три линии)
+    const lineWidth = buttonSize * 0.5;
+    const lineHeight = 4;
+    const lineSpacing = 8;
+    const lineX = buttonX - lineWidth / 2;
+
+    const burgerIcon = this.add.graphics();
+    burgerIcon.fillStyle(0xF6F0E6, 1);
+
+    // Верхняя линия
+    burgerIcon.fillRect(lineX, buttonY - lineSpacing - lineHeight / 2, lineWidth, lineHeight);
+    // Средняя линия
+    burgerIcon.fillRect(lineX, buttonY - lineHeight / 2, lineWidth, lineHeight);
+    // Нижняя линия
+    burgerIcon.fillRect(lineX, buttonY + lineSpacing - lineHeight / 2, lineWidth, lineHeight);
+
+    // Делаем кнопку интерактивной
+    const circle = new Phaser.Geom.Circle(buttonX, buttonY, buttonSize / 2);
+    burgerButton.setInteractive(circle, Phaser.Geom.Circle.Contains);
+
+    burgerButton.on('pointerdown', () => this.showMenuConfirmation());
+    burgerButton.on('pointerover', () => {
+      burgerButton.clear();
+      burgerButton.fillStyle(0x4F8FBF, 0.95);
+      burgerButton.fillCircle(buttonX, buttonY, buttonSize / 2);
+      burgerButton.lineStyle(3, 0x1B4965, 1);
+      burgerButton.strokeCircle(buttonX, buttonY, buttonSize / 2);
+    });
+    burgerButton.on('pointerout', () => {
+      burgerButton.clear();
+      burgerButton.fillStyle(0x3A7CA5, 0.95);
+      burgerButton.fillCircle(buttonX, buttonY, buttonSize / 2);
+      burgerButton.lineStyle(3, 0x1B4965, 1);
+      burgerButton.strokeCircle(buttonX, buttonY, buttonSize / 2);
+    });
+
+    // Устанавливаем высокий depth для кнопки
+    burgerButton.setDepth(100);
+    burgerIcon.setDepth(101);
+  }
+
+  showMenuConfirmation() {
+    // Показываем модальное окно подтверждения
+    const width = this.screenWidth;
+    const height = this.screenHeight;
+    const modalWidth = Math.min(width - 100, 700);
+    const modalHeight = Math.min(height - 200, 400);
+    const modalX = width / 2 - modalWidth / 2;
+    const modalY = height / 2 - modalHeight / 2;
+
+    const container = this.add.container(0, 0);
+    container.setDepth(5000);
+
+    // Полупрозрачный фон
+    const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7);
+    overlay.setOrigin(0, 0);
+    overlay.setInteractive();
+    container.add(overlay);
+
+    // Тень
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(modalX + 15, modalY + 15, modalWidth, modalHeight, 20);
+    container.add(shadow);
+
+    // Фон
+    const modalBg = this.add.graphics();
+    modalBg.fillStyle(0xF6F0E6, 0.98);
+    modalBg.fillRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
+    modalBg.lineStyle(4, 0xB56576, 1);
+    modalBg.strokeRoundedRect(modalX, modalY, modalWidth, modalHeight, 20);
+    container.add(modalBg);
+
+    // Текст
+    const text = this.add.text(
+      width / 2,
+      modalY + 100,
+      'Вы уверены, что хотите\nвернуться в главное меню?\n\nТекущий прогресс на этом\nуровне будет потерян.',
+      {
+        fontSize: this.isMobile ? '24px' : '28px',
+        color: '#2F4858',
+        fontFamily: 'Arial',
+        align: 'center',
+        lineSpacing: 8
+      }
+    ).setOrigin(0.5, 0);
+    container.add(text);
+
+    // Кнопки
+    const buttonWidth = 200;
+    const buttonHeight = 70;
+    const buttonY = modalY + modalHeight - 100;
+    const spacing = 50;
+
+    // Кнопка "Да"
+    this.createConfirmButton(
+      width / 2 - buttonWidth / 2 - spacing / 2,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      'Да',
+      () => {
+        container.destroy();
+        this.scene.start('MenuScene');
+      },
+      container,
+      [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
+      [0xC97585, 0xC97585, 0xAF3336, 0xAF3336]
+    );
+
+    // Кнопка "Нет"
+    this.createConfirmButton(
+      width / 2 + buttonWidth / 2 + spacing / 2,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      'Нет',
+      () => container.destroy(),
+      container,
+      [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
+      [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690]
+    );
+
+    // Анимация
+    container.setAlpha(0);
+    this.tweens.add({
+      targets: container,
+      alpha: 1,
+      duration: 300,
+      ease: 'Power2'
+    });
+  }
+
+  createConfirmButton(x, y, width, height, label, onClick, container, colors, hoverColors) {
+    const button = this.add.graphics();
+
+    const drawButton = (state) => {
+      const c = state === 'hover' ? hoverColors : colors;
+      button.clear();
+      button.fillGradientStyle(c[0], c[1], c[2], c[3], 1);
+      button.fillRoundedRect(x - width / 2, y - height / 2, width, height, 14);
+      button.lineStyle(3, 0x9B2226, 1);
+      button.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 14);
+    };
+
+    drawButton('default');
+
+    const rect = new Phaser.Geom.Rectangle(x - width / 2, y - height / 2, width, height);
+    button.setInteractive(rect, Phaser.Geom.Rectangle.Contains);
+    button.on('pointerdown', onClick);
+    button.on('pointerover', () => drawButton('hover'));
+    button.on('pointerout', () => drawButton('default'));
+    container.add(button);
+
+    const buttonLabel = this.add.text(x, y, label, {
+      fontSize: '28px',
+      color: '#F6F0E6',
+      fontFamily: 'Arial',
+      fontStyle: 'bold',
+      stroke: '#9B2226',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    container.add(buttonLabel);
+  }
+
   createInfoButtons(layout, aboutText, controlText) {
     // Сохраняем тексты для модальных окон
     this.aboutText = aboutText;
@@ -2003,8 +2187,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async useHintWithAd() {
+    // Показываем спиннер
+    this.showSpinner();
+
     // Показываем reward рекламу
     const adShown = await VKBridge.showRewardAd();
+
+    // Скрываем спиннер
+    this.hideSpinner();
 
     // Если реклама была успешно показана, выполняем действие подсказки
     if (adShown) {
@@ -2060,8 +2250,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async clearField() {
+    // Показываем спиннер
+    this.showSpinner();
+
     // Показываем interstitial рекламу
     await VKBridge.showInterstitialAd();
+
+    // Скрываем спиннер
+    this.hideSpinner();
 
     // Создаем копию массива домов, чтобы избежать проблем при удалении
     const housesToRemove = [...this.houses];
@@ -2219,8 +2415,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async goToNextLevelWithAd() {
+    // Показываем спиннер
+    this.showSpinner();
+
     // Показываем interstitial рекламу
     await VKBridge.showInterstitialAd();
+
+    // Скрываем спиннер
+    this.hideSpinner();
 
     // Закрываем модальное окно
     if (this.levelCompleteContainer) {
@@ -2234,6 +2436,63 @@ export default class GameScene extends Phaser.Scene {
     } else {
       // Все уровни пройдены
       this.scene.start('WinScene');
+    }
+  }
+
+  createSpinner() {
+    if (this.spinnerContainer) {
+      return; // Спиннер уже существует
+    }
+
+    const width = this.screenWidth;
+    const height = this.screenHeight;
+
+    // Создаем контейнер для спиннера
+    this.spinnerContainer = this.add.container(0, 0);
+    this.spinnerContainer.setDepth(10000);
+
+    // Полупрозрачный фон
+    const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.5);
+    overlay.setOrigin(0, 0);
+    this.spinnerContainer.add(overlay);
+
+    // Круг спиннера
+    const spinnerSize = 80;
+    const spinnerX = width / 2;
+    const spinnerY = height / 2;
+
+    // Создаем графический объект для спиннера
+    this.spinner = this.add.graphics();
+    this.spinner.lineStyle(8, 0x3A7CA5, 1);
+    this.spinner.beginPath();
+    this.spinner.arc(spinnerX, spinnerY, spinnerSize / 2, 0, Math.PI * 1.5, false);
+    this.spinner.strokePath();
+
+    this.spinnerContainer.add(this.spinner);
+
+    // Анимация вращения спиннера
+    this.tweens.add({
+      targets: this.spinner,
+      angle: 360,
+      duration: 1000,
+      repeat: -1,
+      ease: 'Linear'
+    });
+
+    // Скрываем спиннер по умолчанию
+    this.spinnerContainer.setVisible(false);
+  }
+
+  showSpinner() {
+    if (!this.spinnerContainer) {
+      this.createSpinner();
+    }
+    this.spinnerContainer.setVisible(true);
+  }
+
+  hideSpinner() {
+    if (this.spinnerContainer) {
+      this.spinnerContainer.setVisible(false);
     }
   }
 
