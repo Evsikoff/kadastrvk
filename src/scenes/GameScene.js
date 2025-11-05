@@ -528,7 +528,7 @@ export default class GameScene extends Phaser.Scene {
 
     if (layoutType === 'desktop') {
       const topMargin = 140;
-      const sideMargin = 80;
+      const sideMargin = 50;
       const bottomGap = 20;
 
       layout.header = {
@@ -600,7 +600,7 @@ export default class GameScene extends Phaser.Scene {
         bodyX: sideMargin,
         bodyY: layout.gridStartY + 50,
         bodyStyle: {
-          fontSize: '17px',
+          fontSize: '19px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: aboutWidth },
@@ -691,7 +691,7 @@ export default class GameScene extends Phaser.Scene {
         bodyX: controlX,
         bodyY: layout.gridStartY + 50,
         bodyStyle: {
-          fontSize: '17px',
+          fontSize: '19px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: controlWidth },
@@ -767,7 +767,7 @@ export default class GameScene extends Phaser.Scene {
       };
     } else if (layoutType === 'mobile-landscape') {
       const topMargin = 170;
-      const sideMargin = 40;
+      const sideMargin = 25;
       const bottomGap = 18;
 
       layout.header = {
@@ -825,7 +825,7 @@ export default class GameScene extends Phaser.Scene {
         bodyX: sideMargin,
         bodyY: layout.gridStartY + 48,
         bodyStyle: {
-          fontSize: '16px',
+          fontSize: '18px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: aboutWidth },
@@ -916,7 +916,7 @@ export default class GameScene extends Phaser.Scene {
         bodyX: controlX,
         bodyY: layout.gridStartY + 48,
         bodyStyle: {
-          fontSize: '16px',
+          fontSize: '18px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: controlWidth },
@@ -1773,7 +1773,7 @@ export default class GameScene extends Phaser.Scene {
       modalY + 100,
       contentText,
       {
-        fontSize: '20px',
+        fontSize: '24px',
         color: '#2F4858',
         fontFamily: 'Arial',
         wordWrap: { width: modalWidth - 60 },
