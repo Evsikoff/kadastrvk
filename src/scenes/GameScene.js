@@ -51,7 +51,17 @@ export default class GameScene extends Phaser.Scene {
         this.CELL_SIZE = 80;
       }
     } else {
-      this.CELL_SIZE = 85;
+      const availableWidth = Math.max(this.scale.gameSize.width - 520, 480);
+      const availableHeight = Math.max(this.scale.gameSize.height - 360, 480);
+      const cellSizeFromWidth = Math.floor(availableWidth / this.GRID_SIZE);
+      const cellSizeFromHeight = Math.floor(availableHeight / this.GRID_SIZE);
+      const desiredCellSize = Math.min(cellSizeFromWidth, cellSizeFromHeight);
+
+      if (Number.isFinite(desiredCellSize) && desiredCellSize >= 85) {
+        this.CELL_SIZE = Math.min(desiredCellSize, 110);
+      } else {
+        this.CELL_SIZE = 85;
+      }
     }
   }
 
@@ -527,13 +537,17 @@ export default class GameScene extends Phaser.Scene {
     layout.gridContainerSize = gridSize + layout.gridPadding * 2;
 
     if (layoutType === 'desktop') {
-      const topMargin = 140;
-      const sideMargin = 50;
-      const bottomGap = 20;
+      const topMargin = 110;
+      const sideMargin = 36;
+      const bottomGap = 12;
+
+      const headerPaddingX = 48;
+      const headerPaddingY = 42;
 
       layout.header = {
-        titleY: 25,
-        subtitleY: 85,
+        anchorX: width - headerPaddingX,
+        anchorY: height - headerPaddingY,
+        spacing: 18,
         titleStyle: {
           fontSize: '52px',
           color: '#2F4858',
@@ -569,9 +583,9 @@ export default class GameScene extends Phaser.Scene {
       layout.gridStartY = topMargin;
       layout.gridEndY = layout.gridStartY + layout.gridContainerSize;
 
-      const aboutWidth = 320;
-      const aboutHeight = 460;
-      const aboutPadding = 20;
+      const aboutWidth = 360;
+      const aboutHeight = 520;
+      const aboutPadding = 22;
       const aboutLeft = sideMargin - aboutPadding;
       const aboutTop = layout.gridStartY - aboutPadding;
 
@@ -598,21 +612,21 @@ export default class GameScene extends Phaser.Scene {
           strokeThickness: 2
         },
         bodyX: sideMargin,
-        bodyY: layout.gridStartY + 50,
+        bodyY: layout.gridStartY + 48,
         bodyStyle: {
-          fontSize: '19px',
+          fontSize: '20px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: aboutWidth },
-          lineSpacing: 5
+          lineSpacing: 6
         }
       };
 
       const hintButtonWidth = layout.about.containerWidth;
-      const hintButtonHeight = 70;
+      const hintButtonHeight = 82;
       const hintButtonX = aboutLeft + hintButtonWidth / 2;
       const hintButtonY =
-        aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + 20;
+        aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + 16;
 
       layout.hintButton = {
         x: hintButtonX,
@@ -625,7 +639,7 @@ export default class GameScene extends Phaser.Scene {
         colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
         hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
         textStyle: {
-          fontSize: '24px',
+          fontSize: '26px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
@@ -635,9 +649,9 @@ export default class GameScene extends Phaser.Scene {
       };
 
       const clearButtonWidth = hintButtonWidth;
-      const clearButtonHeight = 70;
+      const clearButtonHeight = 82;
       const clearButtonX = hintButtonX;
-      const clearButtonY = hintButtonY + hintButtonHeight / 2 + 20 + clearButtonHeight / 2;
+      const clearButtonY = hintButtonY + hintButtonHeight / 2 + 16 + clearButtonHeight / 2;
 
       layout.clearButton = {
         x: clearButtonX,
@@ -650,7 +664,7 @@ export default class GameScene extends Phaser.Scene {
         colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
         hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
         textStyle: {
-          fontSize: '24px',
+          fontSize: '26px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
@@ -659,9 +673,9 @@ export default class GameScene extends Phaser.Scene {
         }
       };
 
-      const controlWidth = 320;
-      const controlHeight = 480;
-      const controlPadding = 20;
+      const controlWidth = 360;
+      const controlHeight = 520;
+      const controlPadding = 22;
       const controlX = width - sideMargin - controlWidth;
       const controlLeft = controlX - controlPadding;
       const controlTop = layout.gridStartY - controlPadding;
@@ -689,19 +703,19 @@ export default class GameScene extends Phaser.Scene {
           strokeThickness: 2
         },
         bodyX: controlX,
-        bodyY: layout.gridStartY + 50,
+        bodyY: layout.gridStartY + 48,
         bodyStyle: {
-          fontSize: '19px',
+          fontSize: '20px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: controlWidth },
-          lineSpacing: 5
+          lineSpacing: 6
         }
       };
 
-      const statsWidth = 550;
-      const statsHeight = 140;
-      const statsPadding = 20;
+      const statsWidth = 620;
+      const statsHeight = 160;
+      const statsPadding = 24;
       const statsContentTop = layout.gridEndY + bottomGap;
       const statsLeft = layout.screenCenterX - statsWidth / 2 - statsPadding;
 
@@ -719,9 +733,9 @@ export default class GameScene extends Phaser.Scene {
         shadowAlpha: 0.25,
         shadowOffset: 15,
         titleX: layout.screenCenterX,
-        titleY: statsContentTop + 5,
+        titleY: statsContentTop + 8,
         titleStyle: {
-          fontSize: '28px',
+          fontSize: '30px',
           color: '#9B2226',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -729,18 +743,18 @@ export default class GameScene extends Phaser.Scene {
           strokeThickness: 2
         },
         baseX: layout.screenCenterX,
-        labelY: statsContentTop + 50,
-        valueOffset: 35,
-        columnSpacing: 180,
+        labelY: statsContentTop + 58,
+        valueOffset: 38,
+        columnSpacing: 165,
         labelStyle: {
-          fontSize: '18px',
+          fontSize: '20px',
           color: '#1B4965',
           fontFamily: 'Arial',
           fontStyle: 'bold'
         },
         valueStyles: {
           level: {
-            fontSize: '32px',
+            fontSize: '36px',
             color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -748,7 +762,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           hints: {
-            fontSize: '32px',
+            fontSize: '36px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -756,7 +770,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           houses: {
-            fontSize: '32px',
+            fontSize: '36px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -770,9 +784,13 @@ export default class GameScene extends Phaser.Scene {
       const sideMargin = 25;
       const bottomGap = 18;
 
+      const headerPaddingX = this.isMobile ? 28 : 32;
+      const headerPaddingY = 36;
+
       layout.header = {
-        titleY: 40,
-        subtitleY: 110,
+        anchorX: width - headerPaddingX,
+        anchorY: height - headerPaddingY,
+        spacing: 16,
         titleStyle: {
           fontSize: '46px',
           color: '#2F4858',
@@ -992,16 +1010,18 @@ export default class GameScene extends Phaser.Scene {
         }
       };
     } else {
-      const headerTitleY = 60;
-      const headerSubtitleY = 140;
       const statsContentTop = 220;
       const statsHeight = 130;
       const statsPadding = 22;
       const statsWidth = Math.min(width - 80, 920);
 
+      const headerPaddingX = 26;
+      const headerPaddingY = 28;
+
       layout.header = {
-        titleY: headerTitleY,
-        subtitleY: headerSubtitleY,
+        anchorX: width - headerPaddingX,
+        anchorY: height - headerPaddingY,
+        spacing: 18,
         titleStyle: {
           fontSize: '48px',
           color: '#2F4858',
@@ -1175,6 +1195,14 @@ export default class GameScene extends Phaser.Scene {
         }
       };
 
+      if (layout.header) {
+        const controlBottom = layout.controlButton
+          ? layout.controlButton.y + layout.controlButton.height / 2
+          : height;
+        const safeBottom = Math.max(controlBottom - 28, 140);
+        layout.header.anchorY = Math.min(layout.header.anchorY, safeBottom);
+      }
+
       // Не создаем about и control панели для mobile-portrait
       // Они будут показываться как модальные окна
     }
@@ -1187,13 +1215,19 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.add
-      .text(layout.screenCenterX, layout.header.titleY, 'Игра', layout.header.titleStyle)
-      .setOrigin(0.5);
+    const anchorX = layout.header.anchorX ?? layout.screenCenterX;
+    const anchorY = layout.header.anchorY ?? layout.header.subtitleY ?? layout.header.titleY;
+    const spacing = layout.header.spacing ?? 16;
+
+    const subtitle = this.add
+      .text(anchorX, anchorY, 'КАДАСТР', layout.header.subtitleStyle)
+      .setOrigin(1, 1);
+
+    const titleY = subtitle.y - subtitle.displayHeight - spacing;
 
     this.add
-      .text(layout.screenCenterX, layout.header.subtitleY, 'КАДАСТР', layout.header.subtitleStyle)
-      .setOrigin(0.5);
+      .text(anchorX, titleY, 'Игра', layout.header.titleStyle)
+      .setOrigin(1, 1);
   }
 
   drawGridFrame(layout) {
