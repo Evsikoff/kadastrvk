@@ -541,9 +541,13 @@ export default class GameScene extends Phaser.Scene {
       const sideMargin = 36;
       const bottomGap = 12;
 
+      const headerPaddingX = 48;
+      const headerPaddingY = 42;
+
       layout.header = {
-        titleY: 22,
-        subtitleY: 80,
+        anchorX: width - headerPaddingX,
+        anchorY: height - headerPaddingY,
+        spacing: 18,
         titleStyle: {
           fontSize: '52px',
           color: '#2F4858',
@@ -780,9 +784,13 @@ export default class GameScene extends Phaser.Scene {
       const sideMargin = 25;
       const bottomGap = 18;
 
+      const headerPaddingX = this.isMobile ? 28 : 32;
+      const headerPaddingY = 36;
+
       layout.header = {
-        titleY: 40,
-        subtitleY: 110,
+        anchorX: width - headerPaddingX,
+        anchorY: height - headerPaddingY,
+        spacing: 16,
         titleStyle: {
           fontSize: '46px',
           color: '#2F4858',
@@ -1002,16 +1010,18 @@ export default class GameScene extends Phaser.Scene {
         }
       };
     } else {
-      const headerTitleY = 60;
-      const headerSubtitleY = 140;
       const statsContentTop = 220;
       const statsHeight = 130;
       const statsPadding = 22;
       const statsWidth = Math.min(width - 80, 920);
 
+      const headerPaddingX = 26;
+      const headerPaddingY = 28;
+
       layout.header = {
-        titleY: headerTitleY,
-        subtitleY: headerSubtitleY,
+        anchorX: width - headerPaddingX,
+        anchorY: height - headerPaddingY,
+        spacing: 18,
         titleStyle: {
           fontSize: '48px',
           color: '#2F4858',
@@ -1185,6 +1195,14 @@ export default class GameScene extends Phaser.Scene {
         }
       };
 
+      if (layout.header) {
+        const controlBottom = layout.controlButton
+          ? layout.controlButton.y + layout.controlButton.height / 2
+          : height;
+        const safeBottom = Math.max(controlBottom - 28, 140);
+        layout.header.anchorY = Math.min(layout.header.anchorY, safeBottom);
+      }
+
       // Не создаем about и control панели для mobile-portrait
       // Они будут показываться как модальные окна
     }
@@ -1197,13 +1215,19 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.add
-      .text(layout.screenCenterX, layout.header.titleY, 'Игра', layout.header.titleStyle)
-      .setOrigin(0.5);
+    const anchorX = layout.header.anchorX ?? layout.screenCenterX;
+    const anchorY = layout.header.anchorY ?? layout.header.subtitleY ?? layout.header.titleY;
+    const spacing = layout.header.spacing ?? 16;
+
+    const subtitle = this.add
+      .text(anchorX, anchorY, 'КАДАСТР', layout.header.subtitleStyle)
+      .setOrigin(1, 1);
+
+    const titleY = subtitle.y - subtitle.displayHeight - spacing;
 
     this.add
-      .text(layout.screenCenterX, layout.header.subtitleY, 'КАДАСТР', layout.header.subtitleStyle)
-      .setOrigin(0.5);
+      .text(anchorX, titleY, 'Игра', layout.header.titleStyle)
+      .setOrigin(1, 1);
   }
 
   drawGridFrame(layout) {
