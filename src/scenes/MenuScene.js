@@ -61,10 +61,10 @@ export default class MenuScene extends Phaser.Scene {
     // Заголовок
     const titleY = this.isMobile
       ? (this.currentOrientation === 'portrait' ? 120 : 100)
-      : 150;
+      : 120;
 
     this.add.text(centerX, titleY - 50, 'Игра', {
-      fontSize: this.isMobile ? '42px' : '52px',
+      fontSize: this.isMobile ? '42px' : '56px',
       color: '#2F4858',
       fontFamily: 'Georgia',
       fontStyle: 'italic bold',
@@ -80,7 +80,7 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.add.text(centerX, titleY + 20, 'КАДАСТР', {
-      fontSize: this.isMobile ? '64px' : '72px',
+      fontSize: this.isMobile ? '64px' : '80px',
       color: '#3A7CA5',
       fontFamily: 'Georgia',
       fontStyle: 'bold',
@@ -98,10 +98,10 @@ export default class MenuScene extends Phaser.Scene {
     // Кнопки меню
     const buttonWidth = this.isMobile
       ? Math.min(this.screenWidth - 100, 800)
-      : 600;
-    const buttonHeight = this.isMobile ? 75 : 80;
-    const buttonGap = 20;
-    const startY = centerY + (this.isMobile ? -50 : 0);
+      : Math.min(this.screenWidth - 200, 760);
+    const buttonHeight = this.isMobile ? 75 : 92;
+    const buttonGap = this.isMobile ? 20 : 16;
+    const startY = centerY + (this.isMobile ? -50 : -30);
 
     const buttons = [
       { label: 'Продолжить игру', action: () => this.continueGame() },
@@ -139,7 +139,7 @@ export default class MenuScene extends Phaser.Scene {
     button.on('pointerover', () => drawButton('hover'));
     button.on('pointerout', () => drawButton('default'));
 
-    const fontSize = this.isMobile ? '26px' : '28px';
+    const fontSize = this.isMobile ? '26px' : '30px';
     this.add.text(x, y, label, {
       fontSize: fontSize,
       color: '#F6F0E6',
