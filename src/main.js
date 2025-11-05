@@ -12,7 +12,7 @@ const isMobileDevice = /android|iphone|ipad|ipod|windows phone|mobile/i.test(
 
 const getGameSize = () => {
   if (!isMobileDevice) {
-    return { width: 1920, height: 1080 };
+    return { width: 1920, height: 1280 };
   }
 
   const isPortrait = window.innerHeight > window.innerWidth;
