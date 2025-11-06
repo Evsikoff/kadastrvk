@@ -73,28 +73,40 @@ export default class MenuScene extends Phaser.Scene {
       fontFamily: 'Georgia',
       fontStyle: 'bold',
       stroke: '#1B4965',
-      strokeThickness: 4,
+      strokeThickness: 5,
       shadow: {
-        offsetX: 4,
-        offsetY: 4,
-        color: '#f0e9db',
-        blur: 10,
+        offsetX: 6,
+        offsetY: 6,
+        color: '#000000',
+        blur: 15,
         fill: true
       }
     }).setOrigin(1, 1);
 
+    // Добавляем тонкую пульсацию для заголовка на десктопе
+    if (!this.isMobile) {
+      this.tweens.add({
+        targets: title,
+        scale: 1.02,
+        duration: 2000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+
     const subtitle = this.add.text(titleBaseX, title.y - title.displayHeight - (this.isMobile ? 16 : 24), 'Игра', {
       fontSize: `${subtitleFontSize}px`,
-      color: '#2F4858',
+      color: '#9B2226',
       fontFamily: 'Georgia',
       fontStyle: 'italic bold',
-      stroke: '#9B2226',
-      strokeThickness: 3,
+      stroke: '#B56576',
+      strokeThickness: 4,
       shadow: {
-        offsetX: 2,
-        offsetY: 2,
-        color: '#f0e9db',
-        blur: 6,
+        offsetX: 4,
+        offsetY: 4,
+        color: '#000000',
+        blur: 10,
         fill: true
       }
     });
@@ -122,37 +134,114 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   createMenuButton(x, y, width, height, label, onClick) {
+    // Создаем контейнер для кнопки (для анимации)
+    const buttonContainer = this.add.container(x, y);
+
+    // Создаем тень для кнопки
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 16);
+    buttonContainer.add(shadow);
+
+    // Основная кнопка
     const button = this.add.graphics();
 
     const drawButton = (state) => {
       const colors = state === 'hover'
-        ? [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690]
+        ? [0x5FA8D3, 0x5FA8D3, 0x3A7CA5, 0x3A7CA5]
+        : state === 'press'
+        ? [0x2F6690, 0x2F6690, 0x1B4965, 0x1B4965]
         : [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965];
 
       button.clear();
+
+      // Основной градиент
       button.fillGradientStyle(colors[0], colors[1], colors[2], colors[3], 1);
-      button.fillRoundedRect(x - width / 2, y - height / 2, width, height, 16);
-      button.lineStyle(3, 0x9B2226, 1);
-      button.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 16);
+      button.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
+
+      // Внутреннее свечение при hover
+      if (state === 'hover') {
+        button.lineStyle(2, 0xFFFFFF, 0.3);
+        button.strokeRoundedRect(-width / 2 + 4, -height / 2 + 4, width - 8, height - 8, 12);
+      }
+
+      // Граница
+      button.lineStyle(4, 0x9B2226, 1);
+      button.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
     };
 
     drawButton('default');
-
-    const rect = new Phaser.Geom.Rectangle(x - width / 2, y - height / 2, width, height);
-    button.setInteractive(rect, Phaser.Geom.Rectangle.Contains);
-    button.on('pointerdown', onClick);
-    button.on('pointerover', () => drawButton('hover'));
-    button.on('pointerout', () => drawButton('default'));
+    buttonContainer.add(button);
 
     const fontSize = this.isMobile ? '26px' : '30px';
-    this.add.text(x, y, label, {
+    const buttonLabel = this.add.text(0, 0, label, {
       fontSize: fontSize,
       color: '#F6F0E6',
       fontFamily: 'Arial',
       fontStyle: 'bold',
-      stroke: '#9B2226',
-      strokeThickness: 2
+      stroke: '#1B4965',
+      strokeThickness: 3,
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        color: '#000000',
+        blur: 4,
+        fill: true
+      }
     }).setOrigin(0.5);
+    buttonContainer.add(buttonLabel);
+
+    const rect = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
+    button.setInteractive(rect, Phaser.Geom.Rectangle.Contains);
+
+    // Анимация hover
+    button.on('pointerover', () => {
+      drawButton('hover');
+      this.tweens.add({
+        targets: buttonContainer,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 200,
+        ease: 'Power2'
+      });
+      this.tweens.add({
+        targets: shadow,
+        alpha: 0.5,
+        duration: 200
+      });
+    });
+
+    // Анимация out
+    button.on('pointerout', () => {
+      drawButton('default');
+      this.tweens.add({
+        targets: buttonContainer,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
+      this.tweens.add({
+        targets: shadow,
+        alpha: 1,
+        duration: 200
+      });
+    });
+
+    // Анимация нажатия
+    button.on('pointerdown', () => {
+      drawButton('press');
+      this.tweens.add({
+        targets: buttonContainer,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          onClick();
+        }
+      });
+    });
   }
 
   async showLoadingOverlay(action) {
@@ -350,35 +439,93 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   createConfirmButton(x, y, width, height, label, onClick, container, colors, hoverColors) {
+    // Создаем контейнер для кнопки
+    const btnContainer = this.add.container(x, y);
+
+    // Тень кнопки
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(-width / 2 + 4, -height / 2 + 4, width, height, 14);
+    btnContainer.add(shadow);
+
     const button = this.add.graphics();
 
     const drawButton = (state) => {
       const c = state === 'hover' ? hoverColors : colors;
       button.clear();
       button.fillGradientStyle(c[0], c[1], c[2], c[3], 1);
-      button.fillRoundedRect(x - width / 2, y - height / 2, width, height, 14);
+      button.fillRoundedRect(-width / 2, -height / 2, width, height, 14);
+
+      // Внутреннее свечение при hover
+      if (state === 'hover') {
+        button.lineStyle(2, 0xFFFFFF, 0.25);
+        button.strokeRoundedRect(-width / 2 + 3, -height / 2 + 3, width - 6, height - 6, 10);
+      }
+
       button.lineStyle(3, 0x9B2226, 1);
-      button.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 14);
+      button.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
     };
 
     drawButton('default');
+    btnContainer.add(button);
 
-    const rect = new Phaser.Geom.Rectangle(x - width / 2, y - height / 2, width, height);
-    button.setInteractive(rect, Phaser.Geom.Rectangle.Contains);
-    button.on('pointerdown', onClick);
-    button.on('pointerover', () => drawButton('hover'));
-    button.on('pointerout', () => drawButton('default'));
-    container.add(button);
-
-    const buttonLabel = this.add.text(x, y, label, {
+    const buttonLabel = this.add.text(0, 0, label, {
       fontSize: '28px',
       color: '#F6F0E6',
       fontFamily: 'Arial',
       fontStyle: 'bold',
-      stroke: '#9B2226',
-      strokeThickness: 2
+      stroke: '#1B4965',
+      strokeThickness: 2,
+      shadow: {
+        offsetX: 1,
+        offsetY: 1,
+        color: '#000000',
+        blur: 3,
+        fill: true
+      }
     }).setOrigin(0.5);
-    container.add(buttonLabel);
+    btnContainer.add(buttonLabel);
+
+    const rect = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
+    button.setInteractive(rect, Phaser.Geom.Rectangle.Contains);
+
+    // Анимации
+    button.on('pointerover', () => {
+      drawButton('hover');
+      this.tweens.add({
+        targets: btnContainer,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 150,
+        ease: 'Power2'
+      });
+    });
+
+    button.on('pointerout', () => {
+      drawButton('default');
+      this.tweens.add({
+        targets: btnContainer,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 150,
+        ease: 'Power2'
+      });
+    });
+
+    button.on('pointerdown', () => {
+      this.tweens.add({
+        targets: btnContainer,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          onClick();
+        }
+      });
+    });
+
+    container.add(btnContainer);
   }
 
   async showLevelSelect() {

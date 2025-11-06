@@ -1219,14 +1219,50 @@ export default class GameScene extends Phaser.Scene {
     const anchorY = layout.header.anchorY ?? layout.header.subtitleY ?? layout.header.titleY;
     const spacing = layout.header.spacing ?? 16;
 
+    // Улучшенный стиль для подзаголовка с более выразительными тенями
+    const enhancedSubtitleStyle = {
+      ...layout.header.subtitleStyle,
+      shadow: {
+        offsetX: 6,
+        offsetY: 6,
+        color: '#000000',
+        blur: 15,
+        fill: true
+      }
+    };
+
     const subtitle = this.add
-      .text(anchorX, anchorY, 'КАДАСТР', layout.header.subtitleStyle)
+      .text(anchorX, anchorY, 'КАДАСТР', enhancedSubtitleStyle)
       .setOrigin(1, 1);
+
+    // Добавляем тонкую пульсацию для десктопа
+    if (!this.isMobile) {
+      this.tweens.add({
+        targets: subtitle,
+        scale: 1.02,
+        duration: 2000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
 
     const titleY = subtitle.y - subtitle.displayHeight - spacing;
 
+    // Улучшенный стиль для заголовка
+    const enhancedTitleStyle = {
+      ...layout.header.titleStyle,
+      shadow: {
+        offsetX: 4,
+        offsetY: 4,
+        color: '#000000',
+        blur: 10,
+        fill: true
+      }
+    };
+
     this.add
-      .text(anchorX, titleY, 'Игра', layout.header.titleStyle)
+      .text(anchorX, titleY, 'Игра', enhancedTitleStyle)
       .setOrigin(1, 1);
   }
 
@@ -1257,11 +1293,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createPanel(config) {
+    // Улучшенная тень с большей глубиной
     const shadow = this.add.graphics();
-    shadow.fillStyle(0x000000, config.shadowAlpha ?? 0.25);
+    shadow.fillStyle(0x000000, config.shadowAlpha ?? 0.35);
     shadow.fillRoundedRect(
-      config.containerLeft + (config.shadowOffset ?? 0),
-      config.containerTop + (config.shadowOffset ?? 0),
+      config.containerLeft + (config.shadowOffset ?? 8),
+      config.containerTop + (config.shadowOffset ?? 8),
       config.containerWidth,
       config.containerHeight,
       config.radius
@@ -1277,7 +1314,21 @@ export default class GameScene extends Phaser.Scene {
       config.containerHeight,
       config.radius
     );
-    container.lineStyle(config.borderWidth ?? 3, config.borderColor, 1);
+
+    // Внутреннее свечение для панелей на десктопе
+    if (!this.isMobile) {
+      container.lineStyle(2, 0xFFFFFF, 0.2);
+      container.strokeRoundedRect(
+        config.containerLeft + 4,
+        config.containerTop + 4,
+        config.containerWidth - 8,
+        config.containerHeight - 8,
+        config.radius - 2
+      );
+    }
+
+    // Основная граница с увеличенной толщиной
+    container.lineStyle(config.borderWidth ?? 4, config.borderColor, 1);
     container.strokeRoundedRect(
       config.containerLeft,
       config.containerTop,
@@ -1286,7 +1337,19 @@ export default class GameScene extends Phaser.Scene {
       config.radius
     );
 
-    const title = this.add.text(config.titleX, config.titleY, config.title, config.titleStyle);
+    // Заголовок с улучшенными тенями
+    const enhancedTitleStyle = {
+      ...config.titleStyle,
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        color: '#000000',
+        blur: 5,
+        fill: true
+      }
+    };
+
+    const title = this.add.text(config.titleX, config.titleY, config.title, enhancedTitleStyle);
     if (config.titleOriginX !== undefined || config.titleOriginY !== undefined) {
       title.setOrigin(config.titleOriginX ?? 0, config.titleOriginY ?? 0);
     }
@@ -1304,23 +1367,94 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.hintButtonConfig = config;
+
+    // Создаем контейнер для кнопки
+    this.hintButtonContainer = this.add.container(config.x, config.y);
+
+    // Тень кнопки
+    this.hintButtonShadow = this.add.graphics();
+    this.hintButtonShadow.fillStyle(0x000000, 0.3);
+    this.hintButtonShadow.fillRoundedRect(
+      -config.width / 2 + 5,
+      -config.height / 2 + 5,
+      config.width,
+      config.height,
+      config.radius
+    );
+    this.hintButtonContainer.add(this.hintButtonShadow);
+
     this.hintButton = this.add.graphics();
     this.drawHintButtonState('default');
+    this.hintButtonContainer.add(this.hintButton);
+
+    const buttonLabel = config.label ?? '💡 Подсказка';
+    this.hintButtonLabel = this.add.text(0, 0, buttonLabel, {
+      ...config.textStyle,
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        color: '#000000',
+        blur: 4,
+        fill: true
+      }
+    }).setOrigin(0.5);
+    this.hintButtonContainer.add(this.hintButtonLabel);
 
     const interactiveRect = new Phaser.Geom.Rectangle(
-      config.x - config.width / 2,
-      config.y - config.height / 2,
+      -config.width / 2,
+      -config.height / 2,
       config.width,
       config.height
     );
 
     this.hintButton.setInteractive(interactiveRect, Phaser.Geom.Rectangle.Contains);
-    this.hintButton.on('pointerdown', () => this.useHintWithAd());
-    this.hintButton.on('pointerover', () => this.drawHintButtonState('hover'));
-    this.hintButton.on('pointerout', () => this.drawHintButtonState('default'));
 
-    const buttonLabel = config.label ?? '📹 Подсказка';
-    this.hintButtonLabel = this.add.text(config.x, config.y, buttonLabel, config.textStyle).setOrigin(0.5);
+    this.hintButton.on('pointerover', () => {
+      this.drawHintButtonState('hover');
+      this.tweens.add({
+        targets: this.hintButtonContainer,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    this.hintButton.on('pointerout', () => {
+      this.drawHintButtonState('default');
+      this.tweens.add({
+        targets: this.hintButtonContainer,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    this.hintButton.on('pointerdown', () => {
+      this.tweens.add({
+        targets: this.hintButtonContainer,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          this.useHintWithAd();
+        }
+      });
+    });
+
+    // Добавляем мягкую пульсацию для десктопа
+    if (!this.isMobile) {
+      this.tweens.add({
+        targets: this.hintButtonContainer,
+        scale: 1.03,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
   }
 
   drawHintButtonState(state) {
@@ -1334,16 +1468,29 @@ export default class GameScene extends Phaser.Scene {
     this.hintButton.clear();
     this.hintButton.fillGradientStyle(colors[0], colors[1], colors[2], colors[3], 1);
     this.hintButton.fillRoundedRect(
-      config.x - config.width / 2,
-      config.y - config.height / 2,
+      -config.width / 2,
+      -config.height / 2,
       config.width,
       config.height,
       config.radius
     );
+
+    // Внутреннее свечение при hover
+    if (state === 'hover') {
+      this.hintButton.lineStyle(2, 0xFFFFFF, 0.3);
+      this.hintButton.strokeRoundedRect(
+        -config.width / 2 + 4,
+        -config.height / 2 + 4,
+        config.width - 8,
+        config.height - 8,
+        config.radius - 4
+      );
+    }
+
     this.hintButton.lineStyle(config.borderWidth ?? 3, config.borderColor, 1);
     this.hintButton.strokeRoundedRect(
-      config.x - config.width / 2,
-      config.y - config.height / 2,
+      -config.width / 2,
+      -config.height / 2,
       config.width,
       config.height,
       config.radius
@@ -1357,23 +1504,82 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.clearButtonConfig = config;
+
+    // Создаем контейнер для кнопки
+    this.clearButtonContainer = this.add.container(config.x, config.y);
+
+    // Тень кнопки
+    this.clearButtonShadow = this.add.graphics();
+    this.clearButtonShadow.fillStyle(0x000000, 0.3);
+    this.clearButtonShadow.fillRoundedRect(
+      -config.width / 2 + 5,
+      -config.height / 2 + 5,
+      config.width,
+      config.height,
+      config.radius
+    );
+    this.clearButtonContainer.add(this.clearButtonShadow);
+
     this.clearButton = this.add.graphics();
     this.drawClearButtonState('default');
+    this.clearButtonContainer.add(this.clearButton);
+
+    const buttonLabel = config.label ?? '🗑️ Очистить';
+    this.clearButtonLabel = this.add.text(0, 0, buttonLabel, {
+      ...config.textStyle,
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        color: '#000000',
+        blur: 4,
+        fill: true
+      }
+    }).setOrigin(0.5);
+    this.clearButtonContainer.add(this.clearButtonLabel);
 
     const interactiveRect = new Phaser.Geom.Rectangle(
-      config.x - config.width / 2,
-      config.y - config.height / 2,
+      -config.width / 2,
+      -config.height / 2,
       config.width,
       config.height
     );
 
     this.clearButton.setInteractive(interactiveRect, Phaser.Geom.Rectangle.Contains);
-    this.clearButton.on('pointerdown', () => this.clearField());
-    this.clearButton.on('pointerover', () => this.drawClearButtonState('hover'));
-    this.clearButton.on('pointerout', () => this.drawClearButtonState('default'));
 
-    const buttonLabel = config.label ?? 'Очистить поле';
-    this.clearButtonLabel = this.add.text(config.x, config.y, buttonLabel, config.textStyle).setOrigin(0.5);
+    this.clearButton.on('pointerover', () => {
+      this.drawClearButtonState('hover');
+      this.tweens.add({
+        targets: this.clearButtonContainer,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    this.clearButton.on('pointerout', () => {
+      this.drawClearButtonState('default');
+      this.tweens.add({
+        targets: this.clearButtonContainer,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
+    });
+
+    this.clearButton.on('pointerdown', () => {
+      this.tweens.add({
+        targets: this.clearButtonContainer,
+        scaleX: 0.95,
+        scaleY: 0.95,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          this.clearField();
+        }
+      });
+    });
   }
 
   drawClearButtonState(state) {
@@ -1387,16 +1593,29 @@ export default class GameScene extends Phaser.Scene {
     this.clearButton.clear();
     this.clearButton.fillGradientStyle(colors[0], colors[1], colors[2], colors[3], 1);
     this.clearButton.fillRoundedRect(
-      config.x - config.width / 2,
-      config.y - config.height / 2,
+      -config.width / 2,
+      -config.height / 2,
       config.width,
       config.height,
       config.radius
     );
+
+    // Внутреннее свечение при hover
+    if (state === 'hover') {
+      this.clearButton.lineStyle(2, 0xFFFFFF, 0.25);
+      this.clearButton.strokeRoundedRect(
+        -config.width / 2 + 4,
+        -config.height / 2 + 4,
+        config.width - 8,
+        config.height - 8,
+        config.radius - 4
+      );
+    }
+
     this.clearButton.lineStyle(config.borderWidth ?? 3, config.borderColor, 1);
     this.clearButton.strokeRoundedRect(
-      config.x - config.width / 2,
-      config.y - config.height / 2,
+      -config.width / 2,
+      -config.height / 2,
       config.width,
       config.height,
       config.radius
@@ -1409,11 +1628,12 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
+    // Улучшенная тень
     const shadow = this.add.graphics();
-    shadow.fillStyle(0x000000, stats.shadowAlpha ?? 0.25);
+    shadow.fillStyle(0x000000, stats.shadowAlpha ?? 0.35);
     shadow.fillRoundedRect(
-      stats.containerLeft + (stats.shadowOffset ?? 0),
-      stats.containerTop + (stats.shadowOffset ?? 0),
+      stats.containerLeft + (stats.shadowOffset ?? 8),
+      stats.containerTop + (stats.shadowOffset ?? 8),
       stats.containerWidth,
       stats.containerHeight,
       stats.radius
@@ -1429,7 +1649,20 @@ export default class GameScene extends Phaser.Scene {
       stats.containerHeight,
       stats.radius
     );
-    container.lineStyle(stats.borderWidth ?? 3, stats.borderColor, 1);
+
+    // Внутреннее свечение для статистики на десктопе
+    if (!this.isMobile) {
+      container.lineStyle(2, 0xFFFFFF, 0.2);
+      container.strokeRoundedRect(
+        stats.containerLeft + 4,
+        stats.containerTop + 4,
+        stats.containerWidth - 8,
+        stats.containerHeight - 8,
+        stats.radius - 2
+      );
+    }
+
+    container.lineStyle(stats.borderWidth ?? 4, stats.borderColor, 1);
     container.strokeRoundedRect(
       stats.containerLeft,
       stats.containerTop,
@@ -1438,7 +1671,19 @@ export default class GameScene extends Phaser.Scene {
       stats.radius
     );
 
-    this.add.text(stats.titleX, stats.titleY, 'СТАТИСТИКА', stats.titleStyle).setOrigin(0.5);
+    // Заголовок с улучшенными тенями
+    const enhancedTitleStyle = {
+      ...stats.titleStyle,
+      shadow: {
+        offsetX: 2,
+        offsetY: 2,
+        color: '#000000',
+        blur: 5,
+        fill: true
+      }
+    };
+
+    this.add.text(stats.titleX, stats.titleY, 'СТАТИСТИКА', enhancedTitleStyle).setOrigin(0.5);
 
     if (stats.mode === 'horizontal') {
       const labelY = stats.labelY;
@@ -1492,52 +1737,93 @@ export default class GameScene extends Phaser.Scene {
     const buttonX = margin + buttonSize / 2;
     const buttonY = margin + buttonSize / 2;
 
+    // Создаем контейнер для кнопки
+    this.burgerButtonContainer = this.add.container(buttonX, buttonY);
+    this.burgerButtonContainer.setDepth(100);
+
+    // Тень кнопки
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillCircle(3, 3, buttonSize / 2);
+    this.burgerButtonContainer.add(shadow);
+
     // Создаем круглую кнопку
     const burgerButton = this.add.graphics();
     burgerButton.fillStyle(0x3A7CA5, 0.95);
-    burgerButton.fillCircle(buttonX, buttonY, buttonSize / 2);
-    burgerButton.lineStyle(3, 0x1B4965, 1);
-    burgerButton.strokeCircle(buttonX, buttonY, buttonSize / 2);
+    burgerButton.fillCircle(0, 0, buttonSize / 2);
+    burgerButton.lineStyle(4, 0x1B4965, 1);
+    burgerButton.strokeCircle(0, 0, buttonSize / 2);
+    this.burgerButtonContainer.add(burgerButton);
 
     // Создаем иконку бургера (три линии)
     const lineWidth = buttonSize * 0.5;
     const lineHeight = 4;
     const lineSpacing = 8;
-    const lineX = buttonX - lineWidth / 2;
 
     const burgerIcon = this.add.graphics();
     burgerIcon.fillStyle(0xF6F0E6, 1);
 
     // Верхняя линия
-    burgerIcon.fillRect(lineX, buttonY - lineSpacing - lineHeight / 2, lineWidth, lineHeight);
+    burgerIcon.fillRoundedRect(-lineWidth / 2, -lineSpacing - lineHeight / 2, lineWidth, lineHeight, 2);
     // Средняя линия
-    burgerIcon.fillRect(lineX, buttonY - lineHeight / 2, lineWidth, lineHeight);
+    burgerIcon.fillRoundedRect(-lineWidth / 2, -lineHeight / 2, lineWidth, lineHeight, 2);
     // Нижняя линия
-    burgerIcon.fillRect(lineX, buttonY + lineSpacing - lineHeight / 2, lineWidth, lineHeight);
+    burgerIcon.fillRoundedRect(-lineWidth / 2, lineSpacing - lineHeight / 2, lineWidth, lineHeight, 2);
+    this.burgerButtonContainer.add(burgerIcon);
 
     // Делаем кнопку интерактивной
-    const circle = new Phaser.Geom.Circle(buttonX, buttonY, buttonSize / 2);
+    const circle = new Phaser.Geom.Circle(0, 0, buttonSize / 2);
     burgerButton.setInteractive(circle, Phaser.Geom.Circle.Contains);
 
-    burgerButton.on('pointerdown', () => this.showMenuConfirmation());
     burgerButton.on('pointerover', () => {
       burgerButton.clear();
-      burgerButton.fillStyle(0x4F8FBF, 0.95);
-      burgerButton.fillCircle(buttonX, buttonY, buttonSize / 2);
-      burgerButton.lineStyle(3, 0x1B4965, 1);
-      burgerButton.strokeCircle(buttonX, buttonY, buttonSize / 2);
+      burgerButton.fillStyle(0x5FA8D3, 0.98);
+      burgerButton.fillCircle(0, 0, buttonSize / 2);
+
+      // Внутреннее свечение
+      burgerButton.lineStyle(2, 0xFFFFFF, 0.3);
+      burgerButton.strokeCircle(0, 0, buttonSize / 2 - 4);
+
+      burgerButton.lineStyle(4, 0x1B4965, 1);
+      burgerButton.strokeCircle(0, 0, buttonSize / 2);
+
+      this.tweens.add({
+        targets: this.burgerButtonContainer,
+        scaleX: 1.1,
+        scaleY: 1.1,
+        duration: 200,
+        ease: 'Power2'
+      });
     });
+
     burgerButton.on('pointerout', () => {
       burgerButton.clear();
       burgerButton.fillStyle(0x3A7CA5, 0.95);
-      burgerButton.fillCircle(buttonX, buttonY, buttonSize / 2);
-      burgerButton.lineStyle(3, 0x1B4965, 1);
-      burgerButton.strokeCircle(buttonX, buttonY, buttonSize / 2);
+      burgerButton.fillCircle(0, 0, buttonSize / 2);
+      burgerButton.lineStyle(4, 0x1B4965, 1);
+      burgerButton.strokeCircle(0, 0, buttonSize / 2);
+
+      this.tweens.add({
+        targets: this.burgerButtonContainer,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
     });
 
-    // Устанавливаем высокий depth для кнопки
-    burgerButton.setDepth(100);
-    burgerIcon.setDepth(101);
+    burgerButton.on('pointerdown', () => {
+      this.tweens.add({
+        targets: this.burgerButtonContainer,
+        scaleX: 0.9,
+        scaleY: 0.9,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          this.showMenuConfirmation();
+        }
+      });
+    });
   }
 
   showMenuConfirmation() {
