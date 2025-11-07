@@ -59,13 +59,13 @@ export default class MenuScene extends Phaser.Scene {
     const centerY = this.screenHeight / 2;
 
     // Заголовок в правом нижнем углу
-    const titlePaddingX = this.isMobile ? 24 : 48;
-    const titlePaddingY = this.isMobile ? 32 : 56;
+    const titlePaddingX = this.isMobile ? 24 : 32;
+    const titlePaddingY = this.isMobile ? 32 : 40;
     const titleBaseX = this.screenWidth - titlePaddingX;
     const titleBaseY = this.screenHeight - titlePaddingY;
 
-    const mainTitleFontSize = this.isMobile ? 80 : 96;
-    const subtitleFontSize = this.isMobile ? 42 : 56;
+    const mainTitleFontSize = this.isMobile ? 80 : 64;
+    const subtitleFontSize = this.isMobile ? 42 : 36;
 
     const title = this.add.text(titleBaseX, titleBaseY, 'КАДАСТР', {
       fontSize: `${mainTitleFontSize}px`,
@@ -95,7 +95,7 @@ export default class MenuScene extends Phaser.Scene {
       });
     }
 
-    const subtitle = this.add.text(titleBaseX, title.y - title.displayHeight - (this.isMobile ? 16 : 24), 'Игра', {
+    const subtitle = this.add.text(titleBaseX, title.y - title.displayHeight - (this.isMobile ? 16 : 16), 'Игра', {
       fontSize: `${subtitleFontSize}px`,
       color: '#9B2226',
       fontFamily: 'Georgia',
@@ -115,10 +115,10 @@ export default class MenuScene extends Phaser.Scene {
     // Кнопки меню
     const buttonWidth = this.isMobile
       ? Math.min(this.screenWidth - 100, 800)
-      : Math.min(this.screenWidth - 200, 760);
-    const buttonHeight = this.isMobile ? 75 : 92;
-    const buttonGap = this.isMobile ? 20 : 16;
-    const startY = centerY + (this.isMobile ? -50 : -30);
+      : 400;
+    const buttonHeight = this.isMobile ? 75 : 60;
+    const buttonGap = this.isMobile ? 20 : 12;
+    const startY = centerY + (this.isMobile ? -50 : -90);
 
     const buttons = [
       { label: 'Продолжить игру', action: () => this.continueGame() },
@@ -173,7 +173,7 @@ export default class MenuScene extends Phaser.Scene {
     drawButton('default');
     buttonContainer.add(button);
 
-    const fontSize = this.isMobile ? '26px' : '30px';
+    const fontSize = this.isMobile ? '26px' : '24px';
     const buttonLabel = this.add.text(0, 0, label, {
       fontSize: fontSize,
       color: '#F6F0E6',

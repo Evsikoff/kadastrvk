@@ -51,16 +51,17 @@ export default class GameScene extends Phaser.Scene {
         this.CELL_SIZE = 80;
       }
     } else {
-      const availableWidth = Math.max(this.scale.gameSize.width - 520, 480);
-      const availableHeight = Math.max(this.scale.gameSize.height - 360, 480);
+      // Для нового компактного размера 1000x600
+      const availableWidth = Math.max(this.scale.gameSize.width - 100, 400);
+      const availableHeight = Math.max(this.scale.gameSize.height - 180, 400);
       const cellSizeFromWidth = Math.floor(availableWidth / this.GRID_SIZE);
       const cellSizeFromHeight = Math.floor(availableHeight / this.GRID_SIZE);
       const desiredCellSize = Math.min(cellSizeFromWidth, cellSizeFromHeight);
 
-      if (Number.isFinite(desiredCellSize) && desiredCellSize >= 85) {
-        this.CELL_SIZE = Math.min(desiredCellSize, 110);
+      if (Number.isFinite(desiredCellSize) && desiredCellSize >= 45) {
+        this.CELL_SIZE = Math.min(desiredCellSize, 60);
       } else {
-        this.CELL_SIZE = 85;
+        this.CELL_SIZE = 50;
       }
     }
   }
@@ -525,56 +526,56 @@ export default class GameScene extends Phaser.Scene {
       height,
       screenCenterX: width / 2,
       gridSize,
-      gridPadding: this.isMobile ? (isPortrait ? 16 : 22) : 25,
-      gridFramePadding: this.isMobile ? (isPortrait ? 14 : 18) : 20,
-      gridFrameRadius: this.isMobile ? 14 : 15,
-      gridFrameBorderWidth: 4,
+      gridPadding: this.isMobile ? (isPortrait ? 16 : 22) : 16,
+      gridFramePadding: this.isMobile ? (isPortrait ? 14 : 18) : 12,
+      gridFrameRadius: this.isMobile ? 14 : 12,
+      gridFrameBorderWidth: 3,
       gridFrameBackgroundAlpha: 0.92,
       gridFrameShadowAlpha: this.isMobile ? 0.2 : 0.25,
-      gridFrameShadowOffset: this.isMobile ? (isPortrait ? 10 : 12) : 15
+      gridFrameShadowOffset: this.isMobile ? (isPortrait ? 10 : 12) : 10
     };
 
     layout.gridContainerSize = gridSize + layout.gridPadding * 2;
 
     if (layoutType === 'desktop') {
-      const topMargin = 110;
-      const sideMargin = 36;
-      const bottomGap = 12;
+      const topMargin = 18;
+      const sideMargin = 20;
+      const bottomGap = 8;
 
-      const headerPaddingX = 48;
-      const headerPaddingY = 42;
+      const headerPaddingX = 24;
+      const headerPaddingY = 24;
 
       layout.header = {
         anchorX: width - headerPaddingX,
         anchorY: height - headerPaddingY,
-        spacing: 18,
+        spacing: 8,
         titleStyle: {
-          fontSize: '52px',
+          fontSize: '24px',
           color: '#2F4858',
           fontFamily: 'Georgia',
           fontStyle: 'italic bold',
           stroke: '#9B2226',
-          strokeThickness: 3,
+          strokeThickness: 2,
           shadow: {
             offsetX: 2,
             offsetY: 2,
             color: '#f0e9db',
-            blur: 6,
+            blur: 4,
             fill: true
           }
         },
         subtitleStyle: {
-          fontSize: '72px',
+          fontSize: '36px',
           color: '#3A7CA5',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
           stroke: '#1B4965',
-          strokeThickness: 4,
+          strokeThickness: 3,
           shadow: {
-            offsetX: 4,
-            offsetY: 4,
+            offsetX: 3,
+            offsetY: 3,
             color: '#f0e9db',
-            blur: 10,
+            blur: 8,
             fill: true
           }
         }
@@ -583,139 +584,10 @@ export default class GameScene extends Phaser.Scene {
       layout.gridStartY = topMargin;
       layout.gridEndY = layout.gridStartY + layout.gridContainerSize;
 
-      const aboutWidth = 360;
-      const aboutHeight = 520;
-      const aboutPadding = 22;
-      const aboutLeft = sideMargin - aboutPadding;
-      const aboutTop = layout.gridStartY - aboutPadding;
-
-      layout.about = {
-        containerLeft: aboutLeft,
-        containerTop: aboutTop,
-        containerWidth: aboutWidth + aboutPadding * 2,
-        containerHeight: aboutHeight + aboutPadding * 2,
-        radius: 18,
-        backgroundColor: 0xF6F0E6,
-        backgroundAlpha: 0.94,
-        borderColor: 0xB56576,
-        borderWidth: 3,
-        shadowAlpha: 0.3,
-        shadowOffset: 15,
-        titleX: sideMargin,
-        titleY: layout.gridStartY,
-        titleStyle: {
-          fontSize: '32px',
-          color: '#9B2226',
-          fontFamily: 'Georgia',
-          fontStyle: 'bold',
-          stroke: '#B56576',
-          strokeThickness: 2
-        },
-        bodyX: sideMargin,
-        bodyY: layout.gridStartY + 48,
-        bodyStyle: {
-          fontSize: '20px',
-          color: '#2F4858',
-          fontFamily: 'Arial',
-          wordWrap: { width: aboutWidth },
-          lineSpacing: 6
-        }
-      };
-
-      const hintButtonWidth = layout.about.containerWidth;
-      const hintButtonHeight = 82;
-      const hintButtonX = aboutLeft + hintButtonWidth / 2;
-      const hintButtonY =
-        aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + 16;
-
-      layout.hintButton = {
-        x: hintButtonX,
-        y: hintButtonY,
-        width: hintButtonWidth,
-        height: hintButtonHeight,
-        radius: 14,
-        borderColor: 0x9B2226,
-        borderWidth: 3,
-        colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
-        hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
-        textStyle: {
-          fontSize: '26px',
-          color: '#F6F0E6',
-          fontFamily: 'Arial',
-          fontStyle: 'bold',
-          stroke: '#9B2226',
-          strokeThickness: 2
-        }
-      };
-
-      const clearButtonWidth = hintButtonWidth;
-      const clearButtonHeight = 82;
-      const clearButtonX = hintButtonX;
-      const clearButtonY = hintButtonY + hintButtonHeight / 2 + 16 + clearButtonHeight / 2;
-
-      layout.clearButton = {
-        x: clearButtonX,
-        y: clearButtonY,
-        width: clearButtonWidth,
-        height: clearButtonHeight,
-        radius: 14,
-        borderColor: 0xB56576,
-        borderWidth: 3,
-        colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
-        hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
-        textStyle: {
-          fontSize: '26px',
-          color: '#F6F0E6',
-          fontFamily: 'Arial',
-          fontStyle: 'bold',
-          stroke: '#9B2226',
-          strokeThickness: 2
-        }
-      };
-
-      const controlWidth = 360;
-      const controlHeight = 520;
-      const controlPadding = 22;
-      const controlX = width - sideMargin - controlWidth;
-      const controlLeft = controlX - controlPadding;
-      const controlTop = layout.gridStartY - controlPadding;
-
-      layout.control = {
-        containerLeft: controlLeft,
-        containerTop: controlTop,
-        containerWidth: controlWidth + controlPadding * 2,
-        containerHeight: controlHeight + controlPadding * 2,
-        radius: 18,
-        backgroundColor: 0xF6F0E6,
-        backgroundAlpha: 0.94,
-        borderColor: 0x3A7CA5,
-        borderWidth: 3,
-        shadowAlpha: 0.3,
-        shadowOffset: 15,
-        titleX: controlX,
-        titleY: layout.gridStartY,
-        titleStyle: {
-          fontSize: '32px',
-          color: '#1B4965',
-          fontFamily: 'Georgia',
-          fontStyle: 'bold',
-          stroke: '#3A7CA5',
-          strokeThickness: 2
-        },
-        bodyX: controlX,
-        bodyY: layout.gridStartY + 48,
-        bodyStyle: {
-          fontSize: '20px',
-          color: '#2F4858',
-          fontFamily: 'Arial',
-          wordWrap: { width: controlWidth },
-          lineSpacing: 6
-        }
-      };
-
-      const statsWidth = 620;
-      const statsHeight = 160;
-      const statsPadding = 24;
+      // Статистика под игровым полем (компактная)
+      const statsWidth = 360;
+      const statsHeight = 90;
+      const statsPadding = 14;
       const statsContentTop = layout.gridEndY + bottomGap;
       const statsLeft = layout.screenCenterX - statsWidth / 2 - statsPadding;
 
@@ -725,17 +597,17 @@ export default class GameScene extends Phaser.Scene {
         containerTop: statsContentTop - statsPadding,
         containerWidth: statsWidth + statsPadding * 2,
         containerHeight: statsHeight + statsPadding * 2,
-        radius: 18,
+        radius: 12,
         backgroundColor: 0xF6F0E6,
         backgroundAlpha: 0.94,
         borderColor: 0xB56576,
         borderWidth: 3,
-        shadowAlpha: 0.25,
-        shadowOffset: 15,
+        shadowAlpha: 0.2,
+        shadowOffset: 8,
         titleX: layout.screenCenterX,
-        titleY: statsContentTop + 8,
+        titleY: statsContentTop + 4,
         titleStyle: {
-          fontSize: '30px',
+          fontSize: '18px',
           color: '#9B2226',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -743,18 +615,18 @@ export default class GameScene extends Phaser.Scene {
           strokeThickness: 2
         },
         baseX: layout.screenCenterX,
-        labelY: statsContentTop + 58,
-        valueOffset: 38,
-        columnSpacing: 165,
+        labelY: statsContentTop + 32,
+        valueOffset: 22,
+        columnSpacing: 95,
         labelStyle: {
-          fontSize: '20px',
+          fontSize: '14px',
           color: '#1B4965',
           fontFamily: 'Arial',
           fontStyle: 'bold'
         },
         valueStyles: {
           level: {
-            fontSize: '36px',
+            fontSize: '22px',
             color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -762,7 +634,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           hints: {
-            fontSize: '36px',
+            fontSize: '22px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -770,7 +642,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           houses: {
-            fontSize: '36px',
+            fontSize: '22px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -779,6 +651,99 @@ export default class GameScene extends Phaser.Scene {
           }
         }
       };
+
+      // Кнопки под статистикой
+      const buttonWidth = 180;
+      const buttonHeight = 45;
+      const buttonGap = 10;
+      const buttonStartY = statsContentTop + statsHeight + statsPadding + 12;
+
+      // Кнопка "Подсказка" слева
+      layout.hintButton = {
+        x: sideMargin + buttonWidth / 2,
+        y: buttonStartY + buttonHeight / 2,
+        width: buttonWidth,
+        height: buttonHeight,
+        radius: 10,
+        borderColor: 0x9B2226,
+        borderWidth: 2,
+        colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
+        hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
+        textStyle: {
+          fontSize: '17px',
+          color: '#F6F0E6',
+          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          stroke: '#9B2226',
+          strokeThickness: 2
+        }
+      };
+
+      // Кнопка "Сбросить уровень" слева от центра
+      layout.clearButton = {
+        x: width / 2 - buttonWidth / 2 - buttonGap / 2,
+        y: buttonStartY + buttonHeight / 2,
+        width: buttonWidth,
+        height: buttonHeight,
+        radius: 10,
+        borderColor: 0xB56576,
+        borderWidth: 2,
+        colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
+        hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
+        textStyle: {
+          fontSize: '17px',
+          color: '#F6F0E6',
+          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          stroke: '#9B2226',
+          strokeThickness: 2
+        }
+      };
+
+      // Кнопка "Об игре" справа от центра
+      layout.aboutButton = {
+        x: width / 2 + buttonWidth / 2 + buttonGap / 2,
+        y: buttonStartY + buttonHeight / 2,
+        width: buttonWidth,
+        height: buttonHeight,
+        radius: 10,
+        borderColor: 0xB56576,
+        borderWidth: 2,
+        colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
+        hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
+        textStyle: {
+          fontSize: '17px',
+          color: '#F6F0E6',
+          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          stroke: '#9B2226',
+          strokeThickness: 2
+        }
+      };
+
+      // Кнопка "Управление" справа
+      layout.controlButton = {
+        x: width - sideMargin - buttonWidth / 2,
+        y: buttonStartY + buttonHeight / 2,
+        width: buttonWidth,
+        height: buttonHeight,
+        radius: 10,
+        borderColor: 0x3A7CA5,
+        borderWidth: 2,
+        colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
+        hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
+        textStyle: {
+          fontSize: '17px',
+          color: '#F6F0E6',
+          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          stroke: '#1B4965',
+          strokeThickness: 2
+        }
+      };
+
+      // Не создаем about и control панели для desktop
+      // Они будут показываться как модальные окна
     } else if (layoutType === 'mobile-landscape') {
       const topMargin = 170;
       const sideMargin = 25;
