@@ -36,7 +36,7 @@ const getGameSize = () => {
 
   // Для обычного браузера используем стандартную логику
   if (!isMobileDevice) {
-    return { width: 1920, height: 1280 };
+    return { width: 1000, height: 600 };
   }
 
   const isPortrait = window.innerHeight > window.innerWidth;
