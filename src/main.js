@@ -12,11 +12,32 @@ const isMobileDevice = /android|iphone|ipad|ipod|windows phone|mobile/i.test(
 );
 
 /**
+ * Получает размеры контейнера game-container
+ */
+const getContainerSize = () => {
+  const container = document.getElementById('game-container');
+  if (container) {
+    return {
+      width: container.clientWidth,
+      height: container.clientHeight
+    };
+  }
+  // Fallback на размеры viewport
+  return ContainerDetector.getContainerSize();
+};
+
+/**
  * Определяет размер игры с учетом контекста (iframe/webView или обычный браузер)
  */
 const getGameSize = () => {
   // Получаем информацию о контейнере
   const containerInfo = ContainerDetector.getContainerInfo();
+
+  // Получаем размеры game-container
+  const containerSize = getContainerSize();
+  const aspectRatio = containerSize.width / containerSize.height;
+
+  console.log(`📦 Container size: ${containerSize.width}x${containerSize.height}, aspect ratio: ${aspectRatio.toFixed(3)}`);
 
   // Если приложение открыто в iframe или webView, используем автоматическое определение размеров
   if (containerInfo.isEmbedded) {
@@ -34,9 +55,14 @@ const getGameSize = () => {
     };
   }
 
-  // Для обычного браузера используем стандартную логику
+  // Для обычного браузера используем размеры контейнера напрямую
   if (!isMobileDevice) {
-    return { width: 1920, height: 1280 };
+    // Используем размеры контейнера для заполнения на 100%
+    // Canvas будет масштабироваться через Phaser.Scale.FIT
+    return {
+      width: Math.round(containerSize.width),
+      height: Math.round(containerSize.height)
+    };
   }
 
   const isPortrait = window.innerHeight > window.innerWidth;
@@ -52,7 +78,9 @@ const config = {
   height: initialSize.height,
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: initialSize.width,
+    height: initialSize.height
   },
   scene: [MenuScene, GameScene, WinScene],
   backgroundColor: '#1a1a2e',
@@ -73,29 +101,43 @@ window.addEventListener('contextmenu', (e) => {
 
 const game = new Phaser.Game(config);
 
-// Обработчик изменения размера для мобильных устройств и встроенных контейнеров
+// Обработчик изменения размера для всех устройств
 const containerInfo = ContainerDetector.getContainerInfo();
-if (isMobileDevice || containerInfo.isEmbedded) {
-  const handleResize = () => {
-    const { width, height } = getGameSize();
-    console.log(`📐 Resizing game to: ${width}x${height}`);
-    game.scale.resize(width, height);
-  };
 
-  window.addEventListener('resize', handleResize);
+// Функция для обработки изменения размеров
+const handleResize = () => {
+  const { width, height } = getGameSize();
+  console.log(`📐 Resizing game to: ${width}x${height}`);
+  game.scale.resize(width, height);
+};
+
+// Debounced версия для оптимизации
+let resizeTimeout;
+const debouncedResize = () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(handleResize, 100);
+};
+
+// Устанавливаем обработчики событий resize для всех случаев
+window.addEventListener('resize', debouncedResize);
+
+if (isMobileDevice) {
   window.addEventListener('orientationchange', handleResize);
+}
 
-  // Для iframe также отслеживаем изменения размера родительского окна
-  if (containerInfo.isIframe) {
-    // Добавляем небольшую задержку для корректной обработки изменения размера
-    let resizeTimeout;
-    const debouncedResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(handleResize, 100);
-    };
+// Для iframe также отслеживаем изменения размера родительского окна
+if (containerInfo.isIframe) {
+  // Проверяем изменения размеров с интервалом
+  let lastWidth = window.innerWidth;
+  let lastHeight = window.innerHeight;
 
-    window.addEventListener('resize', debouncedResize);
-  }
+  setInterval(() => {
+    if (window.innerWidth !== lastWidth || window.innerHeight !== lastHeight) {
+      lastWidth = window.innerWidth;
+      lastHeight = window.innerHeight;
+      handleResize();
+    }
+  }, 500);
 }
 
 // Логируем информацию о контейнере при запуске (для отладки)

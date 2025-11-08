@@ -35,8 +35,17 @@
     }
 
     #game-container {
-      display: inline-flex;
+      display: flex;
       position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #game-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
 
     /* Loading Screen Styles */
