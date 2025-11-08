@@ -51,16 +51,33 @@ export default class GameScene extends Phaser.Scene {
         this.CELL_SIZE = 80;
       }
     } else {
-      const availableWidth = Math.max(this.scale.gameSize.width - 520, 480);
-      const availableHeight = Math.max(this.scale.gameSize.height - 360, 480);
+      const desktopWidth = this.scale.gameSize.width;
+      const desktopHeight = this.scale.gameSize.height;
+      const isCompactDesktop = desktopHeight <= 720;
+
+      const widthOffset = isCompactDesktop ? 420 : 520;
+      const minWidthBudget = isCompactDesktop ? 420 : 480;
+      const heightOffset = isCompactDesktop ? 180 : 360;
+      const minHeightBudget = isCompactDesktop ? 360 : 480;
+
+      const availableWidth = Math.max(desktopWidth - widthOffset, minWidthBudget);
+      const availableHeight = Math.max(desktopHeight - heightOffset, minHeightBudget);
       const cellSizeFromWidth = Math.floor(availableWidth / this.GRID_SIZE);
       const cellSizeFromHeight = Math.floor(availableHeight / this.GRID_SIZE);
       const desiredCellSize = Math.min(cellSizeFromWidth, cellSizeFromHeight);
 
-      if (Number.isFinite(desiredCellSize) && desiredCellSize >= 85) {
-        this.CELL_SIZE = Math.min(desiredCellSize, 110);
+      if (Number.isFinite(desiredCellSize)) {
+        if (isCompactDesktop) {
+          const minCompactSize = 45;
+          const maxCompactSize = 72;
+          this.CELL_SIZE = Phaser.Math.Clamp(desiredCellSize, minCompactSize, maxCompactSize);
+        } else if (desiredCellSize >= 85) {
+          this.CELL_SIZE = Math.min(desiredCellSize, 110);
+        } else {
+          this.CELL_SIZE = 85;
+        }
       } else {
-        this.CELL_SIZE = 85;
+        this.CELL_SIZE = isCompactDesktop ? 60 : 85;
       }
     }
   }
@@ -559,15 +576,23 @@ export default class GameScene extends Phaser.Scene {
       aspectRatio
     };
 
+    const isCompactDesktop = layoutType === 'desktop' && height <= 720;
+
+    if (isCompactDesktop) {
+      layout.gridPadding = 18;
+      layout.gridFramePadding = 16;
+      layout.gridFrameShadowOffset = 12;
+    }
+
     layout.gridContainerSize = gridSize + layout.gridPadding * 2;
 
     if (layoutType === 'desktop') {
-      const topMargin = 110;
+      const topMargin = isCompactDesktop ? 24 : 110;
       // Адаптируем боковые отступы под широкие экраны (aspect ratio > 2.2)
       const baseSideMargin = 36;
       const extraWidth = aspectRatio > 2.2 ? (width - height * 2.2) / 2 : 0;
       const sideMargin = baseSideMargin + extraWidth * 0.3; // 30% от дополнительной ширины
-      const bottomGap = 12;
+      const bottomGap = isCompactDesktop ? 8 : 12;
 
       if (aspectRatio > 2.2) {
         console.log(`📱 Wide screen detected: ${aspectRatio.toFixed(3)}, extra width: ${extraWidth.toFixed(0)}px, adjusted sideMargin: ${sideMargin.toFixed(0)}px`);
@@ -617,8 +642,8 @@ export default class GameScene extends Phaser.Scene {
 
       // Адаптируем размеры панелей под широкие экраны
       const aboutWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
-      const aboutHeight = 520;
-      const aboutPadding = 22;
+      const aboutHeight = isCompactDesktop ? 400 : 520;
+      const aboutPadding = isCompactDesktop ? 20 : 22;
       const aboutLeft = sideMargin - aboutPadding;
       const aboutTop = layout.gridStartY - aboutPadding;
 
@@ -637,7 +662,7 @@ export default class GameScene extends Phaser.Scene {
         titleX: sideMargin,
         titleY: layout.gridStartY,
         titleStyle: {
-          fontSize: '32px',
+          fontSize: isCompactDesktop ? '28px' : '32px',
           color: '#9B2226',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -647,7 +672,7 @@ export default class GameScene extends Phaser.Scene {
         bodyX: sideMargin,
         bodyY: layout.gridStartY + 48,
         bodyStyle: {
-          fontSize: '20px',
+          fontSize: isCompactDesktop ? '18px' : '20px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: aboutWidth },
@@ -656,10 +681,11 @@ export default class GameScene extends Phaser.Scene {
       };
 
       const hintButtonWidth = layout.about.containerWidth;
-      const hintButtonHeight = 82;
+      const hintButtonHeight = isCompactDesktop ? 60 : 82;
       const hintButtonX = aboutLeft + hintButtonWidth / 2;
+      const hintButtonSpacing = isCompactDesktop ? 8 : 16;
       const hintButtonY =
-        aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + 16;
+        aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + hintButtonSpacing;
 
       layout.hintButton = {
         x: hintButtonX,
@@ -672,7 +698,7 @@ export default class GameScene extends Phaser.Scene {
         colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
         hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
         textStyle: {
-          fontSize: '26px',
+          fontSize: isCompactDesktop ? '22px' : '26px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
@@ -682,9 +708,10 @@ export default class GameScene extends Phaser.Scene {
       };
 
       const clearButtonWidth = hintButtonWidth;
-      const clearButtonHeight = 82;
+      const clearButtonHeight = isCompactDesktop ? 60 : 82;
       const clearButtonX = hintButtonX;
-      const clearButtonY = hintButtonY + hintButtonHeight / 2 + 16 + clearButtonHeight / 2;
+      const clearButtonSpacing = isCompactDesktop ? 8 : 16;
+      const clearButtonY = hintButtonY + hintButtonHeight / 2 + clearButtonSpacing + clearButtonHeight / 2;
 
       layout.clearButton = {
         x: clearButtonX,
@@ -697,19 +724,19 @@ export default class GameScene extends Phaser.Scene {
         colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
         hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
         textStyle: {
-          fontSize: '26px',
+          fontSize: isCompactDesktop ? '22px' : '26px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
-          stroke: '#9B2226',
+          stroke: '#B56576',
           strokeThickness: 2
         }
       };
 
       // Адаптируем размеры панели управления под широкие экраны
       const controlWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
-      const controlHeight = 520;
-      const controlPadding = 22;
+      const controlHeight = isCompactDesktop ? 440 : 520;
+      const controlPadding = isCompactDesktop ? 20 : 22;
       const controlX = width - sideMargin - controlWidth;
       const controlLeft = controlX - controlPadding;
       const controlTop = layout.gridStartY - controlPadding;
@@ -729,7 +756,7 @@ export default class GameScene extends Phaser.Scene {
         titleX: controlX,
         titleY: layout.gridStartY,
         titleStyle: {
-          fontSize: '32px',
+          fontSize: isCompactDesktop ? '28px' : '32px',
           color: '#1B4965',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -739,7 +766,7 @@ export default class GameScene extends Phaser.Scene {
         bodyX: controlX,
         bodyY: layout.gridStartY + 48,
         bodyStyle: {
-          fontSize: '20px',
+          fontSize: isCompactDesktop ? '18px' : '20px',
           color: '#2F4858',
           fontFamily: 'Arial',
           wordWrap: { width: controlWidth },
@@ -749,8 +776,8 @@ export default class GameScene extends Phaser.Scene {
 
       // Адаптируем размеры статистики под широкие экраны
       const statsWidth = aspectRatio > 2.2 ? Math.min(820, 620 + extraWidth * 0.2) : 620;
-      const statsHeight = 160;
-      const statsPadding = 24;
+      const statsHeight = isCompactDesktop ? 80 : 160;
+      const statsPadding = isCompactDesktop ? 16 : 24;
       const statsContentTop = layout.gridEndY + bottomGap;
       const statsLeft = layout.screenCenterX - statsWidth / 2 - statsPadding;
 
@@ -770,7 +797,7 @@ export default class GameScene extends Phaser.Scene {
         titleX: layout.screenCenterX,
         titleY: statsContentTop + 8,
         titleStyle: {
-          fontSize: '30px',
+          fontSize: isCompactDesktop ? '26px' : '30px',
           color: '#9B2226',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -778,18 +805,22 @@ export default class GameScene extends Phaser.Scene {
           strokeThickness: 2
         },
         baseX: layout.screenCenterX,
-        labelY: statsContentTop + 58,
-        valueOffset: 38,
-        columnSpacing: aspectRatio > 2.2 ? Math.min(220, 165 + extraWidth * 0.05) : 165,
+        labelY: statsContentTop + (isCompactDesktop ? 44 : 58),
+        valueOffset: isCompactDesktop ? 32 : 38,
+        columnSpacing: aspectRatio > 2.2
+          ? Math.min(220, 165 + extraWidth * 0.05)
+          : isCompactDesktop
+            ? 150
+            : 165,
         labelStyle: {
-          fontSize: '20px',
+          fontSize: isCompactDesktop ? '18px' : '20px',
           color: '#1B4965',
           fontFamily: 'Arial',
           fontStyle: 'bold'
         },
         valueStyles: {
           level: {
-            fontSize: '36px',
+            fontSize: isCompactDesktop ? '30px' : '36px',
             color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -797,7 +828,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           hints: {
-            fontSize: '36px',
+            fontSize: isCompactDesktop ? '30px' : '36px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -805,7 +836,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           houses: {
-            fontSize: '36px',
+            fontSize: isCompactDesktop ? '30px' : '36px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
