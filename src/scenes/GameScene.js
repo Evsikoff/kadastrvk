@@ -69,8 +69,10 @@ export default class GameScene extends Phaser.Scene {
     // Загружаем файл с картами
     this.load.text('maps', '/maps/kadastrmapsmall.txt');
 
-    // Загружаем фоновое изображение
-    this.load.image('background', '/back.jpg');
+    // Загружаем фоновое изображение только для мобильных устройств
+    if (this.sys.game.device.os.desktop === false) {
+      this.load.image('background', '/back.jpg');
+    }
 
     // Проверяем наличие текстур ячеек и домов
     this.cellTexturesAvailable = this.checkCellTexturesAvailability();
@@ -276,25 +278,31 @@ export default class GameScene extends Phaser.Scene {
     this.currentOrientation =
       this.scale.orientation === Phaser.Scale.PORTRAIT ? 'portrait' : 'landscape';
 
-    // Добавляем фоновое изображение как повторяющийся тайл, подстраиваем под текущие размеры сцены
-    const bg = this.add.tileSprite(
-      this.screenWidth / 2,
-      this.screenHeight / 2,
-      this.screenWidth,
-      this.screenHeight,
-      'background'
-    );
+    // Добавляем фон
+    if (this.isMobile) {
+      // Для мобильных - используем изображение как повторяющийся тайл
+      const bg = this.add.tileSprite(
+        this.screenWidth / 2,
+        this.screenHeight / 2,
+        this.screenWidth,
+        this.screenHeight,
+        'background'
+      );
 
-    const targetTileSize = 1024;
-    const backgroundSource = this.textures.get('background').getSourceImage();
+      const targetTileSize = 1024;
+      const backgroundSource = this.textures.get('background').getSourceImage();
 
-    const tilesX = Math.max(1, Math.round(this.screenWidth / targetTileSize));
-    const tilesY = Math.max(1, Math.round(this.screenHeight / targetTileSize));
+      const tilesX = Math.max(1, Math.round(this.screenWidth / targetTileSize));
+      const tilesY = Math.max(1, Math.round(this.screenHeight / targetTileSize));
 
-    const tileScaleX = this.screenWidth / (backgroundSource.width * tilesX);
-    const tileScaleY = this.screenHeight / (backgroundSource.height * tilesY);
+      const tileScaleX = this.screenWidth / (backgroundSource.width * tilesX);
+      const tileScaleY = this.screenHeight / (backgroundSource.height * tilesY);
 
-    bg.setTileScale(tileScaleX, tileScaleY);
+      bg.setTileScale(tileScaleX, tileScaleY);
+    } else {
+      // Для десктопа - используем градиент
+      this.createGradientBackground();
+    }
 
     const mapData = this.cache.text.get('maps');
     this.maps = MapParser.parseMapFile(mapData);
@@ -342,6 +350,21 @@ export default class GameScene extends Phaser.Scene {
 
     // Создаем сетку
     this.createGrid();
+  }
+
+  createGradientBackground() {
+    // Создаем градиентный фон для десктопа, аналогичный экрану загрузки
+    // linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(
+      0x1a1a2e, // top-left
+      0x0f3460, // top-right
+      0x1a1a2e, // bottom-left
+      0x0f3460, // bottom-right
+      1 // alpha
+    );
+    bg.fillRect(0, 0, this.screenWidth, this.screenHeight);
+    bg.setDepth(-1);
   }
 
   clearMap() {
