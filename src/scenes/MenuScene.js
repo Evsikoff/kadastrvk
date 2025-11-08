@@ -11,8 +11,10 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   preload() {
-    // Загружаем фоновое изображение
-    this.load.image('menu_background', '/back.jpg');
+    // Загружаем фоновое изображение только для мобильных устройств
+    if (this.sys.game.device.os.desktop === false) {
+      this.load.image('menu_background', '/back.jpg');
+    }
 
     // Загружаем файл с картами для определения количества уровней
     this.load.text('maps', '/maps/kadastrmapsmall.txt');
@@ -26,24 +28,30 @@ export default class MenuScene extends Phaser.Scene {
       this.scale.orientation === Phaser.Scale.PORTRAIT ? 'portrait' : 'landscape';
 
     // Добавляем фон
-    const bg = this.add.tileSprite(
-      this.screenWidth / 2,
-      this.screenHeight / 2,
-      this.screenWidth,
-      this.screenHeight,
-      'menu_background'
-    );
+    if (this.isMobile) {
+      // Для мобильных - используем изображение
+      const bg = this.add.tileSprite(
+        this.screenWidth / 2,
+        this.screenHeight / 2,
+        this.screenWidth,
+        this.screenHeight,
+        'menu_background'
+      );
 
-    const targetTileSize = 1024;
-    const backgroundSource = this.textures.get('menu_background').getSourceImage();
-    const tilesX = Math.max(1, Math.round(this.screenWidth / targetTileSize));
-    const tilesY = Math.max(1, Math.round(this.screenHeight / targetTileSize));
-    const tileScaleX = this.screenWidth / (backgroundSource.width * tilesX);
-    const tileScaleY = this.screenHeight / (backgroundSource.height * tilesY);
-    bg.setTileScale(tileScaleX, tileScaleY);
+      const targetTileSize = 1024;
+      const backgroundSource = this.textures.get('menu_background').getSourceImage();
+      const tilesX = Math.max(1, Math.round(this.screenWidth / targetTileSize));
+      const tilesY = Math.max(1, Math.round(this.screenHeight / targetTileSize));
+      const tileScaleX = this.screenWidth / (backgroundSource.width * tilesX);
+      const tileScaleY = this.screenHeight / (backgroundSource.height * tilesY);
+      bg.setTileScale(tileScaleX, tileScaleY);
 
-    if (bg.preFX) {
-      bg.preFX.addBlur(1, 4, 4, 1.5);
+      if (bg.preFX) {
+        bg.preFX.addBlur(1, 4, 4, 1.5);
+      }
+    } else {
+      // Для десктопа - используем градиент
+      this.createGradientBackground();
     }
 
     // Парсим карты для получения количества уровней
@@ -52,6 +60,21 @@ export default class MenuScene extends Phaser.Scene {
 
     // Создаем меню
     this.createMenu();
+  }
+
+  createGradientBackground() {
+    // Создаем градиентный фон для десктопа, аналогичный экрану загрузки
+    // linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(
+      0x1a1a2e, // top-left
+      0x0f3460, // top-right
+      0x1a1a2e, // bottom-left
+      0x0f3460, // bottom-right
+      1 // alpha
+    );
+    bg.fillRect(0, 0, this.screenWidth, this.screenHeight);
+    bg.setDepth(-1);
   }
 
   createMenu() {
