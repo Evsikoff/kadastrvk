@@ -541,6 +541,7 @@ export default class GameScene extends Phaser.Scene {
     const gridSize = this.GRID_SIZE * this.CELL_SIZE;
     const isPortrait = this.currentOrientation === 'portrait';
     const layoutType = this.isMobile ? (isPortrait ? 'mobile-portrait' : 'mobile-landscape') : 'desktop';
+    const aspectRatio = width / height;
 
     const layout = {
       type: layoutType,
@@ -554,15 +555,23 @@ export default class GameScene extends Phaser.Scene {
       gridFrameBorderWidth: 4,
       gridFrameBackgroundAlpha: 0.92,
       gridFrameShadowAlpha: this.isMobile ? 0.2 : 0.25,
-      gridFrameShadowOffset: this.isMobile ? (isPortrait ? 10 : 12) : 15
+      gridFrameShadowOffset: this.isMobile ? (isPortrait ? 10 : 12) : 15,
+      aspectRatio
     };
 
     layout.gridContainerSize = gridSize + layout.gridPadding * 2;
 
     if (layoutType === 'desktop') {
       const topMargin = 110;
-      const sideMargin = 36;
+      // Адаптируем боковые отступы под широкие экраны (aspect ratio > 2.2)
+      const baseSideMargin = 36;
+      const extraWidth = aspectRatio > 2.2 ? (width - height * 2.2) / 2 : 0;
+      const sideMargin = baseSideMargin + extraWidth * 0.3; // 30% от дополнительной ширины
       const bottomGap = 12;
+
+      if (aspectRatio > 2.2) {
+        console.log(`📱 Wide screen detected: ${aspectRatio.toFixed(3)}, extra width: ${extraWidth.toFixed(0)}px, adjusted sideMargin: ${sideMargin.toFixed(0)}px`);
+      }
 
       const headerPaddingX = 48;
       const headerPaddingY = 42;
@@ -606,7 +615,8 @@ export default class GameScene extends Phaser.Scene {
       layout.gridStartY = topMargin;
       layout.gridEndY = layout.gridStartY + layout.gridContainerSize;
 
-      const aboutWidth = 360;
+      // Адаптируем размеры панелей под широкие экраны
+      const aboutWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
       const aboutHeight = 520;
       const aboutPadding = 22;
       const aboutLeft = sideMargin - aboutPadding;
@@ -696,7 +706,8 @@ export default class GameScene extends Phaser.Scene {
         }
       };
 
-      const controlWidth = 360;
+      // Адаптируем размеры панели управления под широкие экраны
+      const controlWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
       const controlHeight = 520;
       const controlPadding = 22;
       const controlX = width - sideMargin - controlWidth;
@@ -736,7 +747,8 @@ export default class GameScene extends Phaser.Scene {
         }
       };
 
-      const statsWidth = 620;
+      // Адаптируем размеры статистики под широкие экраны
+      const statsWidth = aspectRatio > 2.2 ? Math.min(820, 620 + extraWidth * 0.2) : 620;
       const statsHeight = 160;
       const statsPadding = 24;
       const statsContentTop = layout.gridEndY + bottomGap;
@@ -768,7 +780,7 @@ export default class GameScene extends Phaser.Scene {
         baseX: layout.screenCenterX,
         labelY: statsContentTop + 58,
         valueOffset: 38,
-        columnSpacing: 165,
+        columnSpacing: aspectRatio > 2.2 ? Math.min(220, 165 + extraWidth * 0.05) : 165,
         labelStyle: {
           fontSize: '20px',
           color: '#1B4965',
