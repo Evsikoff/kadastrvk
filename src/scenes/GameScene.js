@@ -2155,13 +2155,22 @@ export default class GameScene extends Phaser.Scene {
     const buttonSize = this.isMobile ? 60 : 70;
     const margin = 20;
 
-    // Позиционируем кнопку в верхнем левом углу
-    const buttonX = margin + buttonSize / 2;
-    const buttonY = margin + buttonSize / 2;
+    // По умолчанию позиционируем кнопку в верхнем левом углу
+    let buttonX = margin + buttonSize / 2;
+    let buttonY = margin + buttonSize / 2;
+
+    // Если есть контейнер "Об игре", размещаем кнопку поверх него
+    if (layout?.about) {
+      const about = layout.about;
+      const overlapOffset = buttonSize * 0.35;
+
+      buttonX = about.containerLeft + about.containerWidth - overlapOffset;
+      buttonY = about.containerTop + overlapOffset;
+    }
 
     // Создаем контейнер для кнопки
     this.burgerButtonContainer = this.add.container(buttonX, buttonY);
-    this.burgerButtonContainer.setDepth(100);
+    this.burgerButtonContainer.setDepth(150);
 
     // Тень кнопки
     const shadow = this.add.graphics();
