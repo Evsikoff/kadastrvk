@@ -54,11 +54,12 @@ export default class GameScene extends Phaser.Scene {
       const desktopWidth = this.scale.gameSize.width;
       const desktopHeight = this.scale.gameSize.height;
       const isCompactDesktop = desktopHeight <= 720;
+      const isUltraCompactDesktop = desktopHeight <= 560;
 
-      const widthOffset = isCompactDesktop ? 420 : 520;
-      const minWidthBudget = isCompactDesktop ? 420 : 480;
-      const heightOffset = isCompactDesktop ? 180 : 360;
-      const minHeightBudget = isCompactDesktop ? 360 : 480;
+      const widthOffset = isUltraCompactDesktop ? 360 : isCompactDesktop ? 420 : 520;
+      const minWidthBudget = isUltraCompactDesktop ? 360 : isCompactDesktop ? 420 : 480;
+      const heightOffset = isUltraCompactDesktop ? 220 : isCompactDesktop ? 180 : 360;
+      const minHeightBudget = isUltraCompactDesktop ? 300 : isCompactDesktop ? 360 : 480;
 
       const availableWidth = Math.max(desktopWidth - widthOffset, minWidthBudget);
       const availableHeight = Math.max(desktopHeight - heightOffset, minHeightBudget);
@@ -68,8 +69,8 @@ export default class GameScene extends Phaser.Scene {
 
       if (Number.isFinite(desiredCellSize)) {
         if (isCompactDesktop) {
-          const minCompactSize = 45;
-          const maxCompactSize = 72;
+          const minCompactSize = isUltraCompactDesktop ? 36 : 45;
+          const maxCompactSize = isUltraCompactDesktop ? 58 : 72;
           this.CELL_SIZE = Phaser.Math.Clamp(desiredCellSize, minCompactSize, maxCompactSize);
         } else if (desiredCellSize >= 85) {
           this.CELL_SIZE = Math.min(desiredCellSize, 110);
@@ -546,8 +547,7 @@ export default class GameScene extends Phaser.Scene {
     this.createStatsSection(this.layout);
     this.createBurgerButton(this.layout);
 
-    // Для mobile-portrait создаем кнопки вместо панелей
-    if (this.layout.type === 'mobile-portrait') {
+    if (this.layout.aboutButton || this.layout.controlButton) {
       this.createInfoButtons(this.layout, aboutText, controlText);
     }
   }
@@ -577,36 +577,40 @@ export default class GameScene extends Phaser.Scene {
     };
 
     const isCompactDesktop = layoutType === 'desktop' && height <= 720;
+    const isUltraCompactDesktop = layoutType === 'desktop' && height <= 560;
 
     if (isCompactDesktop) {
-      layout.gridPadding = 18;
-      layout.gridFramePadding = 16;
-      layout.gridFrameShadowOffset = 12;
+      layout.gridPadding = isUltraCompactDesktop ? 12 : 18;
+      layout.gridFramePadding = isUltraCompactDesktop ? 12 : 16;
+      layout.gridFrameShadowOffset = isUltraCompactDesktop ? 10 : 12;
     }
 
     layout.gridContainerSize = gridSize + layout.gridPadding * 2;
 
     if (layoutType === 'desktop') {
-      const topMargin = isCompactDesktop ? 24 : 110;
+      const topMargin = isUltraCompactDesktop ? 16 : isCompactDesktop ? 24 : 110;
       // Адаптируем боковые отступы под широкие экраны (aspect ratio > 2.2)
-      const baseSideMargin = 36;
+      const baseSideMargin = isUltraCompactDesktop ? 20 : 36;
       const extraWidth = aspectRatio > 2.2 ? (width - height * 2.2) / 2 : 0;
       const sideMargin = baseSideMargin + extraWidth * 0.3; // 30% от дополнительной ширины
-      const bottomGap = isCompactDesktop ? 8 : 12;
+      const bottomGap = isUltraCompactDesktop ? 6 : isCompactDesktop ? 8 : 12;
 
       if (aspectRatio > 2.2) {
         console.log(`📱 Wide screen detected: ${aspectRatio.toFixed(3)}, extra width: ${extraWidth.toFixed(0)}px, adjusted sideMargin: ${sideMargin.toFixed(0)}px`);
       }
 
-      const headerPaddingX = 48;
-      const headerPaddingY = 42;
+      const headerPaddingX = isUltraCompactDesktop ? 32 : 48;
+      const headerPaddingY = isUltraCompactDesktop ? 32 : 42;
+      const headerSpacing = isUltraCompactDesktop ? 14 : 18;
+      const headerTitleFontSize = isUltraCompactDesktop ? '40px' : isCompactDesktop ? '48px' : '52px';
+      const headerSubtitleFontSize = isUltraCompactDesktop ? '60px' : isCompactDesktop ? '68px' : '72px';
 
       layout.header = {
         anchorX: width - headerPaddingX,
         anchorY: height - headerPaddingY,
-        spacing: 18,
+        spacing: headerSpacing,
         titleStyle: {
-          fontSize: '52px',
+          fontSize: headerTitleFontSize,
           color: '#2F4858',
           fontFamily: 'Georgia',
           fontStyle: 'italic bold',
@@ -621,7 +625,7 @@ export default class GameScene extends Phaser.Scene {
           }
         },
         subtitleStyle: {
-          fontSize: '72px',
+          fontSize: headerSubtitleFontSize,
           color: '#3A7CA5',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -637,214 +641,387 @@ export default class GameScene extends Phaser.Scene {
         }
       };
 
-      layout.gridStartY = topMargin;
-      layout.gridEndY = layout.gridStartY + layout.gridContainerSize;
+      if (isUltraCompactDesktop) {
+        const horizontalPadding = Math.max(18, sideMargin);
+        const buttonRowWidth = Math.max(width - horizontalPadding * 2, 1);
+        let buttonSpacing = Math.max(10, Math.min(20, buttonRowWidth * 0.02));
+        let buttonWidth = Math.min(220, (buttonRowWidth - buttonSpacing * 3) / 4);
 
-      // Адаптируем размеры панелей под широкие экраны
-      const aboutWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
-      const aboutHeight = isCompactDesktop ? 400 : 520;
-      const aboutPadding = isCompactDesktop ? 20 : 22;
-      const aboutLeft = sideMargin - aboutPadding;
-      const aboutTop = layout.gridStartY - aboutPadding;
-
-      layout.about = {
-        containerLeft: aboutLeft,
-        containerTop: aboutTop,
-        containerWidth: aboutWidth + aboutPadding * 2,
-        containerHeight: aboutHeight + aboutPadding * 2,
-        radius: 18,
-        backgroundColor: 0xF6F0E6,
-        backgroundAlpha: 0.94,
-        borderColor: 0xB56576,
-        borderWidth: 3,
-        shadowAlpha: 0.3,
-        shadowOffset: 15,
-        titleX: sideMargin,
-        titleY: layout.gridStartY,
-        titleStyle: {
-          fontSize: isCompactDesktop ? '28px' : '32px',
-          color: '#9B2226',
-          fontFamily: 'Georgia',
-          fontStyle: 'bold',
-          stroke: '#B56576',
-          strokeThickness: 2
-        },
-        bodyX: sideMargin,
-        bodyY: layout.gridStartY + 48,
-        bodyStyle: {
-          fontSize: isCompactDesktop ? '18px' : '20px',
-          color: '#2F4858',
-          fontFamily: 'Arial',
-          wordWrap: { width: aboutWidth },
-          lineSpacing: 6
+        if (buttonWidth < 90) {
+          buttonSpacing = Math.max(8, buttonSpacing - (90 - buttonWidth) / 3);
+          buttonWidth = Math.min(220, (buttonRowWidth - buttonSpacing * 3) / 4);
         }
-      };
 
-      const hintButtonWidth = layout.about.containerWidth;
-      const hintButtonHeight = isCompactDesktop ? 60 : 82;
-      const hintButtonX = aboutLeft + hintButtonWidth / 2;
-      const hintButtonSpacing = isCompactDesktop ? 8 : 16;
-      const hintButtonY =
-        aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + hintButtonSpacing;
+        const buttonHeight = buttonWidth >= 110 ? 52 : buttonWidth >= 90 ? 48 : 44;
+        const buttonFontSize = buttonWidth >= 150 ? '20px' : buttonWidth >= 120 ? '18px' : buttonWidth >= 100 ? '17px' : '15px';
+        const buttonY = topMargin + buttonHeight / 2;
 
-      layout.hintButton = {
-        x: hintButtonX,
-        y: hintButtonY,
-        width: hintButtonWidth,
-        height: hintButtonHeight,
-        radius: 14,
-        borderColor: 0x9B2226,
-        borderWidth: 3,
-        colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
-        hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
-        textStyle: {
-          fontSize: isCompactDesktop ? '22px' : '26px',
-          color: '#F6F0E6',
-          fontFamily: 'Arial',
-          fontStyle: 'bold',
-          stroke: '#9B2226',
-          strokeThickness: 2
-        }
-      };
+        const buttonCenters = Array.from({ length: 4 }, (_, index) =>
+          horizontalPadding + buttonWidth / 2 + index * (buttonWidth + buttonSpacing)
+        );
 
-      const clearButtonWidth = hintButtonWidth;
-      const clearButtonHeight = isCompactDesktop ? 60 : 82;
-      const clearButtonX = hintButtonX;
-      const clearButtonSpacing = isCompactDesktop ? 8 : 16;
-      const clearButtonY = hintButtonY + hintButtonHeight / 2 + clearButtonSpacing + clearButtonHeight / 2;
+        layout.hintButton = {
+          x: buttonCenters[0],
+          y: buttonY,
+          width: buttonWidth,
+          height: buttonHeight,
+          radius: 12,
+          borderColor: 0x9B2226,
+          borderWidth: 3,
+          colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
+          hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
+          textStyle: {
+            fontSize: buttonFontSize,
+            color: '#F6F0E6',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#9B2226',
+            strokeThickness: 2
+          }
+        };
 
-      layout.clearButton = {
-        x: clearButtonX,
-        y: clearButtonY,
-        width: clearButtonWidth,
-        height: clearButtonHeight,
-        radius: 14,
-        borderColor: 0xB56576,
-        borderWidth: 3,
-        colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
-        hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
-        textStyle: {
-          fontSize: isCompactDesktop ? '22px' : '26px',
-          color: '#F6F0E6',
-          fontFamily: 'Arial',
-          fontStyle: 'bold',
-          stroke: '#B56576',
-          strokeThickness: 2
-        }
-      };
+        layout.clearButton = {
+          x: buttonCenters[1],
+          y: buttonY,
+          width: buttonWidth,
+          height: buttonHeight,
+          radius: 12,
+          borderColor: 0xB56576,
+          borderWidth: 3,
+          colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
+          hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
+          textStyle: {
+            fontSize: buttonFontSize,
+            color: '#F6F0E6',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#B56576',
+            strokeThickness: 2
+          }
+        };
 
-      // Адаптируем размеры панели управления под широкие экраны
-      const controlWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
-      const controlHeight = isCompactDesktop ? 440 : 520;
-      const controlPadding = isCompactDesktop ? 20 : 22;
-      const controlX = width - sideMargin - controlWidth;
-      const controlLeft = controlX - controlPadding;
-      const controlTop = layout.gridStartY - controlPadding;
+        layout.aboutButton = {
+          x: buttonCenters[2],
+          y: buttonY,
+          width: buttonWidth,
+          height: buttonHeight,
+          radius: 12,
+          borderColor: 0xB56576,
+          borderWidth: 3,
+          colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
+          hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
+          textStyle: {
+            fontSize: buttonFontSize,
+            color: '#F6F0E6',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#9B2226',
+            strokeThickness: 2
+          }
+        };
 
-      layout.control = {
-        containerLeft: controlLeft,
-        containerTop: controlTop,
-        containerWidth: controlWidth + controlPadding * 2,
-        containerHeight: controlHeight + controlPadding * 2,
-        radius: 18,
-        backgroundColor: 0xF6F0E6,
-        backgroundAlpha: 0.94,
-        borderColor: 0x3A7CA5,
-        borderWidth: 3,
-        shadowAlpha: 0.3,
-        shadowOffset: 15,
-        titleX: controlX,
-        titleY: layout.gridStartY,
-        titleStyle: {
-          fontSize: isCompactDesktop ? '28px' : '32px',
-          color: '#1B4965',
-          fontFamily: 'Georgia',
-          fontStyle: 'bold',
-          stroke: '#3A7CA5',
-          strokeThickness: 2
-        },
-        bodyX: controlX,
-        bodyY: layout.gridStartY + 48,
-        bodyStyle: {
-          fontSize: isCompactDesktop ? '18px' : '20px',
-          color: '#2F4858',
-          fontFamily: 'Arial',
-          wordWrap: { width: controlWidth },
-          lineSpacing: 6
-        }
-      };
+        layout.controlButton = {
+          x: buttonCenters[3],
+          y: buttonY,
+          width: buttonWidth,
+          height: buttonHeight,
+          radius: 12,
+          borderColor: 0x3A7CA5,
+          borderWidth: 3,
+          colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
+          hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
+          textStyle: {
+            fontSize: buttonFontSize,
+            color: '#F6F0E6',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#1B4965',
+            strokeThickness: 2
+          }
+        };
 
-      // Адаптируем размеры статистики под широкие экраны
-      const statsWidth = aspectRatio > 2.2 ? Math.min(820, 620 + extraWidth * 0.2) : 620;
-      const statsHeight = isCompactDesktop ? 80 : 160;
-      const statsPadding = isCompactDesktop ? 16 : 24;
-      const statsContentTop = layout.gridEndY + bottomGap;
-      const statsLeft = layout.screenCenterX - statsWidth / 2 - statsPadding;
+        const statsPadding = 10;
+        const statsContentHeight = 44;
+        const statsContainerHeight = statsContentHeight + statsPadding * 2;
+        const statsContainerTop = topMargin + buttonHeight + 6;
+        const statsContainerWidth = Math.max(1, width - horizontalPadding * 2);
+        const statsInnerWidth = Math.max(1, statsContainerWidth - statsPadding * 2);
+        let statsColumnSpacing = Math.min(160, Math.max(90, statsInnerWidth / 3.2));
+        statsColumnSpacing = Math.max(75, Math.min(statsColumnSpacing, statsInnerWidth / 2.4));
 
-      layout.stats = {
-        mode: 'horizontal',
-        containerLeft: statsLeft,
-        containerTop: statsContentTop - statsPadding,
-        containerWidth: statsWidth + statsPadding * 2,
-        containerHeight: statsHeight + statsPadding * 2,
-        radius: 18,
-        backgroundColor: 0xF6F0E6,
-        backgroundAlpha: 0.94,
-        borderColor: 0xB56576,
-        borderWidth: 3,
-        shadowAlpha: 0.25,
-        shadowOffset: 15,
-        titleX: layout.screenCenterX,
-        titleY: statsContentTop + 8,
-        titleStyle: {
-          fontSize: isCompactDesktop ? '26px' : '30px',
-          color: '#9B2226',
-          fontFamily: 'Georgia',
-          fontStyle: 'bold',
-          stroke: '#B56576',
-          strokeThickness: 2
-        },
-        baseX: layout.screenCenterX,
-        labelY: statsContentTop + (isCompactDesktop ? 44 : 58),
-        valueOffset: isCompactDesktop ? 32 : 38,
-        columnSpacing: aspectRatio > 2.2
-          ? Math.min(220, 165 + extraWidth * 0.05)
-          : isCompactDesktop
-            ? 150
-            : 165,
-        labelStyle: {
-          fontSize: isCompactDesktop ? '18px' : '20px',
-          color: '#1B4965',
-          fontFamily: 'Arial',
-          fontStyle: 'bold'
-        },
-        valueStyles: {
-          level: {
-            fontSize: isCompactDesktop ? '30px' : '36px',
+        layout.stats = {
+          mode: 'horizontal',
+          containerLeft: horizontalPadding,
+          containerTop: statsContainerTop,
+          containerWidth: statsContainerWidth,
+          containerHeight: statsContainerHeight,
+          radius: 16,
+          backgroundColor: 0xF6F0E6,
+          backgroundAlpha: 0.94,
+          borderColor: 0xB56576,
+          borderWidth: 3,
+          shadowAlpha: 0.22,
+          shadowOffset: 12,
+          titleX: layout.screenCenterX,
+          titleY: statsContainerTop + statsPadding + 4,
+          titleStyle: {
+            fontSize: '24px',
             color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
             stroke: '#B56576',
             strokeThickness: 2
           },
-          hints: {
-            fontSize: isCompactDesktop ? '30px' : '36px',
-            color: '#3A7CA5',
+          baseX: layout.screenCenterX,
+          labelY: statsContainerTop + statsPadding + 28,
+          valueOffset: 22,
+          columnSpacing: statsColumnSpacing,
+          labelStyle: {
+            fontSize: '16px',
+            color: '#1B4965',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+          },
+          valueStyles: {
+            level: {
+              fontSize: '26px',
+              color: '#9B2226',
+              fontFamily: 'Georgia',
+              fontStyle: 'bold',
+              stroke: '#B56576',
+              strokeThickness: 2
+            },
+            hints: {
+              fontSize: '26px',
+              color: '#3A7CA5',
+              fontFamily: 'Georgia',
+              fontStyle: 'bold',
+              stroke: '#1B4965',
+              strokeThickness: 2
+            },
+            houses: {
+              fontSize: '26px',
+              color: '#3A7CA5',
+              fontFamily: 'Georgia',
+              fontStyle: 'bold',
+              stroke: '#1B4965',
+              strokeThickness: 2
+            }
+          }
+        };
+
+        layout.gridStartY = statsContainerTop + statsContainerHeight + 8;
+        layout.gridEndY = layout.gridStartY + layout.gridContainerSize;
+      } else {
+        layout.gridStartY = topMargin;
+        layout.gridEndY = layout.gridStartY + layout.gridContainerSize;
+
+        // Адаптируем размеры панелей под широкие экраны
+        const aboutWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
+        const aboutHeight = isCompactDesktop ? 400 : 520;
+        const aboutPadding = isCompactDesktop ? 20 : 22;
+        const aboutLeft = sideMargin - aboutPadding;
+        const aboutTop = layout.gridStartY - aboutPadding;
+
+        layout.about = {
+          containerLeft: aboutLeft,
+          containerTop: aboutTop,
+          containerWidth: aboutWidth + aboutPadding * 2,
+          containerHeight: aboutHeight + aboutPadding * 2,
+          radius: 18,
+          backgroundColor: 0xF6F0E6,
+          backgroundAlpha: 0.94,
+          borderColor: 0xB56576,
+          borderWidth: 3,
+          shadowAlpha: 0.3,
+          shadowOffset: 15,
+          titleX: sideMargin,
+          titleY: layout.gridStartY,
+          titleStyle: {
+            fontSize: isCompactDesktop ? '28px' : '32px',
+            color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
-            stroke: '#1B4965',
+            stroke: '#B56576',
             strokeThickness: 2
           },
-          houses: {
-            fontSize: isCompactDesktop ? '30px' : '36px',
-            color: '#3A7CA5',
-            fontFamily: 'Georgia',
+          bodyX: sideMargin,
+          bodyY: layout.gridStartY + 48,
+          bodyStyle: {
+            fontSize: isCompactDesktop ? '18px' : '20px',
+            color: '#2F4858',
+            fontFamily: 'Arial',
+            wordWrap: { width: aboutWidth },
+            lineSpacing: 6
+          }
+        };
+
+        const hintButtonWidth = layout.about.containerWidth;
+        const hintButtonHeight = isCompactDesktop ? 60 : 82;
+        const hintButtonX = aboutLeft + hintButtonWidth / 2;
+        const hintButtonSpacing = isCompactDesktop ? 8 : 16;
+        const hintButtonY =
+          aboutTop + layout.about.containerHeight + hintButtonHeight / 2 + hintButtonSpacing;
+
+        layout.hintButton = {
+          x: hintButtonX,
+          y: hintButtonY,
+          width: hintButtonWidth,
+          height: hintButtonHeight,
+          radius: 14,
+          borderColor: 0x9B2226,
+          borderWidth: 3,
+          colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
+          hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
+          textStyle: {
+            fontSize: isCompactDesktop ? '22px' : '26px',
+            color: '#F6F0E6',
+            fontFamily: 'Arial',
             fontStyle: 'bold',
-            stroke: '#1B4965',
+            stroke: '#9B2226',
             strokeThickness: 2
           }
-        }
-      };
+        };
+
+        const clearButtonWidth = hintButtonWidth;
+        const clearButtonHeight = isCompactDesktop ? 60 : 82;
+        const clearButtonX = hintButtonX;
+        const clearButtonSpacing = isCompactDesktop ? 8 : 16;
+        const clearButtonY = hintButtonY + hintButtonHeight / 2 + clearButtonSpacing + clearButtonHeight / 2;
+
+        layout.clearButton = {
+          x: clearButtonX,
+          y: clearButtonY,
+          width: clearButtonWidth,
+          height: clearButtonHeight,
+          radius: 14,
+          borderColor: 0xB56576,
+          borderWidth: 3,
+          colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
+          hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
+          textStyle: {
+            fontSize: isCompactDesktop ? '22px' : '26px',
+            color: '#F6F0E6',
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            stroke: '#B56576',
+            strokeThickness: 2
+          }
+        };
+
+        // Адаптируем размеры панели управления под широкие экраны
+        const controlWidth = aspectRatio > 2.2 ? Math.min(480, 360 + extraWidth * 0.15) : 360;
+        const controlHeight = isCompactDesktop ? 440 : 520;
+        const controlPadding = isCompactDesktop ? 20 : 22;
+        const controlX = width - sideMargin - controlWidth;
+        const controlLeft = controlX - controlPadding;
+        const controlTop = layout.gridStartY - controlPadding;
+
+        layout.control = {
+          containerLeft: controlLeft,
+          containerTop: controlTop,
+          containerWidth: controlWidth + controlPadding * 2,
+          containerHeight: controlHeight + controlPadding * 2,
+          radius: 18,
+          backgroundColor: 0xF6F0E6,
+          backgroundAlpha: 0.94,
+          borderColor: 0x3A7CA5,
+          borderWidth: 3,
+          shadowAlpha: 0.3,
+          shadowOffset: 15,
+          titleX: controlX,
+          titleY: layout.gridStartY,
+          titleStyle: {
+            fontSize: isCompactDesktop ? '28px' : '32px',
+            color: '#1B4965',
+            fontFamily: 'Georgia',
+            fontStyle: 'bold',
+            stroke: '#3A7CA5',
+            strokeThickness: 2
+          },
+          bodyX: controlX,
+          bodyY: layout.gridStartY + 48,
+          bodyStyle: {
+            fontSize: isCompactDesktop ? '18px' : '20px',
+            color: '#2F4858',
+            fontFamily: 'Arial',
+            wordWrap: { width: controlWidth },
+            lineSpacing: 6
+          }
+        };
+
+        // Адаптируем размеры статистики под широкие экраны
+        const statsWidth = aspectRatio > 2.2 ? Math.min(820, 620 + extraWidth * 0.2) : 620;
+        const statsHeight = isCompactDesktop ? 80 : 160;
+        const statsPadding = isCompactDesktop ? 16 : 24;
+        const statsContentTop = layout.gridEndY + bottomGap;
+        const statsLeft = layout.screenCenterX - statsWidth / 2 - statsPadding;
+
+        layout.stats = {
+          mode: 'horizontal',
+          containerLeft: statsLeft,
+          containerTop: statsContentTop - statsPadding,
+          containerWidth: statsWidth + statsPadding * 2,
+          containerHeight: statsHeight + statsPadding * 2,
+          radius: 18,
+          backgroundColor: 0xF6F0E6,
+          backgroundAlpha: 0.94,
+          borderColor: 0xB56576,
+          borderWidth: 3,
+          shadowAlpha: 0.25,
+          shadowOffset: 15,
+          titleX: layout.screenCenterX,
+          titleY: statsContentTop + 8,
+          titleStyle: {
+            fontSize: isCompactDesktop ? '26px' : '30px',
+            color: '#9B2226',
+            fontFamily: 'Georgia',
+            fontStyle: 'bold',
+            stroke: '#B56576',
+            strokeThickness: 2
+          },
+          baseX: layout.screenCenterX,
+          labelY: statsContentTop + (isCompactDesktop ? 44 : 58),
+          valueOffset: isCompactDesktop ? 32 : 38,
+          columnSpacing: aspectRatio > 2.2
+            ? Math.min(220, 165 + extraWidth * 0.05)
+            : isCompactDesktop
+              ? 150
+              : 165,
+          labelStyle: {
+            fontSize: isCompactDesktop ? '18px' : '20px',
+            color: '#1B4965',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+          },
+          valueStyles: {
+            level: {
+              fontSize: isCompactDesktop ? '30px' : '36px',
+              color: '#9B2226',
+              fontFamily: 'Georgia',
+              fontStyle: 'bold',
+              stroke: '#B56576',
+              strokeThickness: 2
+            },
+            hints: {
+              fontSize: isCompactDesktop ? '30px' : '36px',
+              color: '#3A7CA5',
+              fontFamily: 'Georgia',
+              fontStyle: 'bold',
+              stroke: '#1B4965',
+              strokeThickness: 2
+            },
+            houses: {
+              fontSize: isCompactDesktop ? '30px' : '36px',
+              color: '#3A7CA5',
+              fontFamily: 'Georgia',
+              fontStyle: 'bold',
+              stroke: '#1B4965',
+              strokeThickness: 2
+            }
+          }
+        };
+      }
 
       const leftColumnBottom = Math.max(
         layout.about ? layout.about.containerTop + layout.about.containerHeight : -Infinity,
@@ -860,16 +1037,22 @@ export default class GameScene extends Phaser.Scene {
         ? layout.stats.containerTop + layout.stats.containerHeight
         : -Infinity;
 
+      const infoButtonsBottom = Math.max(
+        layout.aboutButton ? layout.aboutButton.y + layout.aboutButton.height / 2 : -Infinity,
+        layout.controlButton ? layout.controlButton.y + layout.controlButton.height / 2 : -Infinity
+      );
+
       const gridFrameBottom = layout.gridEndY + layout.gridFramePadding;
       const structuralBottom = Math.max(
         gridFrameBottom,
         leftColumnBottom,
         rightColumnBottom,
-        statsBottom
+        statsBottom,
+        infoButtonsBottom
       );
 
       if (layout.header && typeof layout.header.anchorY === 'number') {
-        const headerOffset = isCompactDesktop ? 64 : 96;
+        const headerOffset = isUltraCompactDesktop ? 48 : isCompactDesktop ? 64 : 96;
         layout.header.anchorY = Math.min(layout.header.anchorY, structuralBottom + headerOffset);
       }
 
@@ -1364,6 +1547,16 @@ export default class GameScene extends Phaser.Scene {
     if (layout.clearButton) {
       topValues.push(layout.clearButton.y - layout.clearButton.height / 2);
       bottomValues.push(layout.clearButton.y + layout.clearButton.height / 2);
+    }
+
+    if (layout.aboutButton) {
+      topValues.push(layout.aboutButton.y - layout.aboutButton.height / 2);
+      bottomValues.push(layout.aboutButton.y + layout.aboutButton.height / 2);
+    }
+
+    if (layout.controlButton) {
+      topValues.push(layout.controlButton.y - layout.controlButton.height / 2);
+      bottomValues.push(layout.controlButton.y + layout.controlButton.height / 2);
     }
 
     if (layout.stats) {
