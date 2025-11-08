@@ -845,6 +845,38 @@ export default class GameScene extends Phaser.Scene {
           }
         }
       };
+
+      const leftColumnBottom = Math.max(
+        layout.about ? layout.about.containerTop + layout.about.containerHeight : -Infinity,
+        layout.hintButton ? layout.hintButton.y + layout.hintButton.height / 2 : -Infinity,
+        layout.clearButton ? layout.clearButton.y + layout.clearButton.height / 2 : -Infinity
+      );
+
+      const rightColumnBottom = layout.control
+        ? layout.control.containerTop + layout.control.containerHeight
+        : -Infinity;
+
+      const statsBottom = layout.stats
+        ? layout.stats.containerTop + layout.stats.containerHeight
+        : -Infinity;
+
+      const gridFrameBottom = layout.gridEndY + layout.gridFramePadding;
+      const structuralBottom = Math.max(
+        gridFrameBottom,
+        leftColumnBottom,
+        rightColumnBottom,
+        statsBottom
+      );
+
+      if (layout.header && typeof layout.header.anchorY === 'number') {
+        const headerOffset = isCompactDesktop ? 64 : 96;
+        layout.header.anchorY = Math.min(layout.header.anchorY, structuralBottom + headerOffset);
+      }
+
+      this.normalizeDesktopVerticalSpread(layout, {
+        isCompactDesktop,
+        maxViewportHeight: 5500
+      });
     } else if (layoutType === 'mobile-landscape') {
       const topMargin = 170;
       const sideMargin = 25;
@@ -1274,6 +1306,137 @@ export default class GameScene extends Phaser.Scene {
     }
 
     return layout;
+  }
+
+  normalizeDesktopVerticalSpread(layout, { isCompactDesktop, maxViewportHeight }) {
+    if (!layout || layout.type !== 'desktop') {
+      return;
+    }
+
+    const safeTop = isCompactDesktop ? 16 : 32;
+    const safeBottom = isCompactDesktop ? 16 : 40;
+    const effectiveViewport = Math.max(
+      Math.min(layout.height, maxViewportHeight),
+      safeTop + safeBottom + 1
+    );
+
+    const bounds = this.getDesktopContentBounds(layout, isCompactDesktop);
+    const allowedBottom = Math.min(layout.height - safeBottom, effectiveViewport - safeBottom);
+
+    if (bounds.bottom > allowedBottom) {
+      const shiftUp = allowedBottom - bounds.bottom;
+      this.shiftDesktopLayout(layout, shiftUp);
+    }
+
+    const updatedBounds = this.getDesktopContentBounds(layout, isCompactDesktop);
+
+    if (updatedBounds.top < safeTop) {
+      const shiftDown = safeTop - updatedBounds.top;
+      this.shiftDesktopLayout(layout, shiftDown);
+    }
+  }
+
+  getDesktopContentBounds(layout, isCompactDesktop) {
+    const topValues = [];
+    const bottomValues = [];
+    const gridFramePadding = layout.gridFramePadding ?? 0;
+
+    const gridTop = layout.gridStartY - gridFramePadding;
+    const gridBottom = layout.gridEndY + gridFramePadding;
+    topValues.push(gridTop);
+    bottomValues.push(gridBottom);
+
+    if (layout.about) {
+      topValues.push(layout.about.containerTop);
+      bottomValues.push(layout.about.containerTop + layout.about.containerHeight);
+    }
+
+    if (layout.control) {
+      topValues.push(layout.control.containerTop);
+      bottomValues.push(layout.control.containerTop + layout.control.containerHeight);
+    }
+
+    if (layout.hintButton) {
+      topValues.push(layout.hintButton.y - layout.hintButton.height / 2);
+      bottomValues.push(layout.hintButton.y + layout.hintButton.height / 2);
+    }
+
+    if (layout.clearButton) {
+      topValues.push(layout.clearButton.y - layout.clearButton.height / 2);
+      bottomValues.push(layout.clearButton.y + layout.clearButton.height / 2);
+    }
+
+    if (layout.stats) {
+      topValues.push(layout.stats.containerTop);
+      bottomValues.push(layout.stats.containerTop + layout.stats.containerHeight);
+    }
+
+    if (layout.header && typeof layout.header.anchorY === 'number') {
+      const headerHeightEstimate = isCompactDesktop ? 170 : 240;
+      topValues.push(layout.header.anchorY - headerHeightEstimate);
+      bottomValues.push(layout.header.anchorY);
+    }
+
+    return {
+      top: Math.min(...topValues),
+      bottom: Math.max(...bottomValues)
+    };
+  }
+
+  shiftDesktopLayout(layout, delta) {
+    if (!delta) {
+      return;
+    }
+
+    layout.gridStartY += delta;
+    layout.gridEndY += delta;
+
+    const shiftPanel = panel => {
+      panel.containerTop += delta;
+      if (typeof panel.titleY === 'number') {
+        panel.titleY += delta;
+      }
+      if (typeof panel.bodyY === 'number') {
+        panel.bodyY += delta;
+      }
+    };
+
+    if (layout.about) {
+      shiftPanel(layout.about);
+    }
+
+    if (layout.control) {
+      shiftPanel(layout.control);
+    }
+
+    const shiftButton = button => {
+      button.y += delta;
+    };
+
+    if (layout.hintButton) {
+      shiftButton(layout.hintButton);
+    }
+
+    if (layout.clearButton) {
+      shiftButton(layout.clearButton);
+    }
+
+    if (layout.stats) {
+      layout.stats.containerTop += delta;
+      if (typeof layout.stats.titleY === 'number') {
+        layout.stats.titleY += delta;
+      }
+      if (typeof layout.stats.labelY === 'number') {
+        layout.stats.labelY += delta;
+      }
+      if (typeof layout.stats.firstRowY === 'number') {
+        layout.stats.firstRowY += delta;
+      }
+    }
+
+    if (layout.header && typeof layout.header.anchorY === 'number') {
+      layout.header.anchorY += delta;
+    }
   }
 
   createHeader(layout) {
