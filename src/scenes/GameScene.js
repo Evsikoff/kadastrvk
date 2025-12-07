@@ -23,6 +23,7 @@ export default class GameScene extends Phaser.Scene {
     this.cellTexturesAvailable = false;
     this.baseHouseTexturesAvailable = false;
     this.correctHouseTexturesAvailable = false;
+    this.isBuilding = false;
     this.spinner = null;
     this.spinnerContainer = null;
   }
@@ -2623,6 +2624,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   onCellClick(cell) {
+    if (this.isBuilding) {
+      return;
+    }
+
     // Если в ячейке уже есть дом - удаляем его
     if (cell.house) {
       this.removeHouse(cell);
@@ -2640,6 +2645,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   buildHouse(cell, isHintHouse = false) {
+    this.isBuilding = true;
+
     // Анимация постройки дома
     const prefix = isHintHouse ? 'hint_house' : 'house';
     const frames = [`${prefix}_0`, `${prefix}_1`, `${prefix}_2`, `${prefix}_3`];
@@ -2682,6 +2689,7 @@ export default class GameScene extends Phaser.Scene {
     // Добавляем заблокированные ячейки и X-метки
     this.time.delayedCall(667, () => {
       this.addBlockedCells(cell);
+      this.isBuilding = false;
     });
   }
 
@@ -2891,6 +2899,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   onXMarkClick(clickedCell) {
+    if (this.isBuilding) {
+      return;
+    }
+
     this.highlightBlockedMarks(clickedCell);
   }
 
