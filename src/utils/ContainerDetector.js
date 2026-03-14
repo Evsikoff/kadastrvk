@@ -119,16 +119,18 @@ export class ContainerDetector {
    * @param {number} options.baseWidth - базовая ширина для расчетов (по умолчанию 1920)
    * @param {number} options.minAspectRatio - минимальное соотношение сторон (по умолчанию 0.5 - портрет)
    * @param {number} options.maxAspectRatio - максимальное соотношение сторон (по умолчанию 2.0 - ландшафт)
+   * @param {{width:number, height:number}} options.containerSize - явные размеры контейнера
    * @returns {{width: number, height: number, aspectRatio: number}}
    */
   static getOptimalGameSize(options = {}) {
     const {
       baseWidth = 1920,
       minAspectRatio = 0.3,  // Поддержка узкой портретной ориентации
-      maxAspectRatio = 3.0    // Поддержка ультра-широкой ландшафтной
+      maxAspectRatio = 3.0,   // Поддержка ультра-широкой ландшафтной
+      containerSize
     } = options;
 
-    const { width, height } = this.getContainerSize();
+    const { width, height } = containerSize ?? this.getContainerSize();
     let aspectRatio = width / height;
 
     // Ограничиваем соотношение сторон
