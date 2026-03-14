@@ -6,6 +6,14 @@ export class VKBridge {
   static adsPreloaded = false;
 
   /**
+   * Subscribe to VK Bridge events
+   * @param {Function} callback - Event handler
+   */
+  static subscribe(callback) {
+    bridge.subscribe(callback);
+  }
+
+  /**
    * Initialize VK Bridge
    */
   static async init() {

@@ -93,14 +93,6 @@ window.addEventListener('contextmenu', (e) => {
   e.preventDefault();
 });
 
-// Initialize VK Bridge and preload ads before starting the game
-(async () => {
-  await VKBridge.init();
-  await VKBridge.preloadRewardAd();
-})();
-
-const game = new Phaser.Game(config);
-
 // Обработчик изменения размера для всех устройств
 const containerInfo = ContainerDetector.getContainerInfo();
 
@@ -117,6 +109,22 @@ const debouncedResize = () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(handleResize, 100);
 };
+
+// Initialize VK Bridge and preload ads before starting the game
+(async () => {
+  await VKBridge.init();
+  await VKBridge.preloadRewardAd();
+
+  // Подписываемся на события VK Bridge
+  VKBridge.subscribe((e) => {
+    if (e.detail.type === 'VKWebAppUpdateConfig') {
+      console.log('🔄 VK Config updated, checking for resize...');
+      debouncedResize();
+    }
+  });
+})();
+
+const game = new Phaser.Game(config);
 
 // Устанавливаем обработчики событий resize для всех случаев
 window.addEventListener('resize', debouncedResize);
