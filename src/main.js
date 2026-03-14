@@ -7,9 +7,7 @@ import { ContainerDetector } from './utils/ContainerDetector.js';
 
 const MOBILE_PORTRAIT_SIZE = { width: 1080, height: 1920 };
 const MOBILE_LANDSCAPE_SIZE = { width: 1920, height: 1080 };
-const EMBEDDED_CONTAINER_PADDING_X = 16;
-const EMBEDDED_CONTAINER_PADDING_TOP = 16;
-const EMBEDDED_CONTAINER_PADDING_BOTTOM = 32;
+const EMBEDDED_CONTAINER_PADDING = 16;
 const isMobileDevice = /android|iphone|ipad|ipod|windows phone|mobile/i.test(
   navigator.userAgent ?? ''
 );
@@ -42,8 +40,8 @@ const getEmbeddedContainerSize = () => {
   const baseWidth = Math.round(vkClientRect?.width ?? window.innerWidth);
   const baseHeight = Math.round(vkClientRect?.height ?? window.innerHeight);
 
-  const width = Math.max(320, baseWidth - EMBEDDED_CONTAINER_PADDING_X * 2);
-  const height = Math.max(320, baseHeight - EMBEDDED_CONTAINER_PADDING_TOP - EMBEDDED_CONTAINER_PADDING_BOTTOM);
+  const width = Math.max(320, baseWidth - EMBEDDED_CONTAINER_PADDING * 2);
+  const height = Math.max(320, baseHeight - EMBEDDED_CONTAINER_PADDING * 2);
 
   return {
     width,
@@ -61,10 +59,7 @@ const applyEmbeddedContainerPadding = (isEmbedded) => {
   }
 
   if (isEmbedded) {
-    container.style.paddingTop = `${EMBEDDED_CONTAINER_PADDING_TOP}px`;
-    container.style.paddingRight = `${EMBEDDED_CONTAINER_PADDING_X}px`;
-    container.style.paddingBottom = `${EMBEDDED_CONTAINER_PADDING_BOTTOM}px`;
-    container.style.paddingLeft = `${EMBEDDED_CONTAINER_PADDING_X}px`;
+    container.style.padding = `${EMBEDDED_CONTAINER_PADDING}px`;
     container.style.width = '100%';
     container.style.height = '100%';
   } else {
