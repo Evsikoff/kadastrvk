@@ -124,8 +124,8 @@ export class ContainerDetector {
   static getOptimalGameSize(options = {}) {
     const {
       baseWidth = 1920,
-      minAspectRatio = 0.5,  // портретная ориентация (9:16 ~ 0.56)
-      maxAspectRatio = 2.0    // широкая ландшафтная (16:9 ~ 1.78)
+      minAspectRatio = 0.3,  // Поддержка узкой портретной ориентации
+      maxAspectRatio = 3.0    // Поддержка ультра-широкой ландшафтной
     } = options;
 
     const { width, height } = this.getContainerSize();
