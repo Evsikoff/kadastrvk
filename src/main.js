@@ -7,38 +7,12 @@ import { ContainerDetector } from './utils/ContainerDetector.js';
 
 const MOBILE_PORTRAIT_SIZE = { width: 1080, height: 1920 };
 const MOBILE_LANDSCAPE_SIZE = { width: 1920, height: 1080 };
-const EMBEDDED_CONTAINER_PADDING_X = 16;
-const EMBEDDED_CONTAINER_PADDING_TOP = 16;
-const EMBEDDED_CONTAINER_PADDING_BOTTOM = 32;
+const EMBEDDED_CONTAINER_PADDING = 16;
 const isMobileDevice = /android|iphone|ipad|ipod|windows phone|mobile/i.test(
   navigator.userAgent ?? ''
 );
 
 let vkClientRect = null;
-
-/**
- * Возвращает внутренний размер контейнера без padding
- */
-const getContainerContentSize = () => {
-  const container = document.getElementById('game-container');
-
-  if (!container) {
-    return null;
-  }
-
-  const rect = container.getBoundingClientRect();
-  const styles = window.getComputedStyle(container);
-
-  const paddingX = (Number.parseFloat(styles.paddingLeft) || 0) +
-    (Number.parseFloat(styles.paddingRight) || 0);
-  const paddingY = (Number.parseFloat(styles.paddingTop) || 0) +
-    (Number.parseFloat(styles.paddingBottom) || 0);
-
-  return {
-    width: Math.max(1, Math.floor(rect.width - paddingX)),
-    height: Math.max(1, Math.floor(rect.height - paddingY))
-  };
-};
 
 /**
  * Получает размеры контейнера game-container
@@ -63,15 +37,11 @@ const getContainerSize = () => {
  * Получает размер контейнера из VK Bridge с fallback
  */
 const getEmbeddedContainerSize = () => {
-  const hostWidth = Math.round(vkClientRect?.width ?? window.innerWidth);
-  const hostHeight = Math.round(vkClientRect?.height ?? window.innerHeight);
+  const baseWidth = Math.round(vkClientRect?.width ?? window.innerWidth);
+  const baseHeight = Math.round(vkClientRect?.height ?? window.innerHeight);
 
-  const contentSize = getContainerContentSize();
-
-  // Используем наименьшее из измерений хоста и фактического контейнера,
-  // чтобы не выйти за границы iframe по нижней/боковым сторонам.
-  const width = Math.max(1, Math.min(hostWidth, contentSize?.width ?? hostWidth));
-  const height = Math.max(1, Math.min(hostHeight, contentSize?.height ?? hostHeight));
+  const width = Math.max(320, baseWidth - EMBEDDED_CONTAINER_PADDING * 2);
+  const height = Math.max(320, baseHeight - EMBEDDED_CONTAINER_PADDING * 2);
 
   return {
     width,
@@ -89,10 +59,7 @@ const applyEmbeddedContainerPadding = (isEmbedded) => {
   }
 
   if (isEmbedded) {
-    container.style.paddingTop = `${EMBEDDED_CONTAINER_PADDING_TOP}px`;
-    container.style.paddingRight = `${EMBEDDED_CONTAINER_PADDING_X}px`;
-    container.style.paddingBottom = `${EMBEDDED_CONTAINER_PADDING_BOTTOM}px`;
-    container.style.paddingLeft = `${EMBEDDED_CONTAINER_PADDING_X}px`;
+    container.style.padding = `${EMBEDDED_CONTAINER_PADDING}px`;
     container.style.width = '100%';
     container.style.height = '100%';
   } else {
