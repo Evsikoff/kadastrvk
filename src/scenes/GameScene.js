@@ -827,8 +827,8 @@ export default class GameScene extends Phaser.Scene {
         layout.about = {
           containerLeft: aboutLeft,
           containerTop: aboutTop,
-          containerWidth: aboutWidth + aboutPadding * 2,
-          containerHeight: aboutHeight + aboutPadding * 2,
+        containerWidth: (aboutWidth + 60) + aboutPadding * 2,
+        containerHeight: (aboutHeight + 60) + aboutPadding * 2,
           radius: 18,
           backgroundColor: 0xF6F0E6,
           backgroundAlpha: 0.94,
@@ -839,7 +839,7 @@ export default class GameScene extends Phaser.Scene {
           titleX: sideMargin,
           titleY: layout.gridStartY,
           titleStyle: {
-            fontSize: isCompactDesktop ? '28px' : '32px',
+          fontSize: isCompactDesktop ? '32px' : '36px',
             color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -847,13 +847,13 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           bodyX: sideMargin,
-          bodyY: layout.gridStartY + 48,
+        bodyY: layout.gridStartY + 56,
           bodyStyle: {
-            fontSize: isCompactDesktop ? '18px' : '20px',
+          fontSize: isCompactDesktop ? '22px' : '24px',
             color: '#2F4858',
             fontFamily: 'Arial',
-            wordWrap: { width: aboutWidth },
-            lineSpacing: 6
+          wordWrap: { width: aboutWidth + 60 },
+          lineSpacing: 8
           }
         };
 
@@ -919,10 +919,10 @@ export default class GameScene extends Phaser.Scene {
         const controlTop = layout.gridStartY - controlPadding;
 
         layout.control = {
-          containerLeft: controlLeft,
+          containerLeft: controlLeft - 60,
           containerTop: controlTop,
-          containerWidth: controlWidth + controlPadding * 2,
-          containerHeight: controlHeight + controlPadding * 2,
+          containerWidth: (controlWidth + 60) + controlPadding * 2,
+          containerHeight: (controlHeight + 60) + controlPadding * 2,
           radius: 18,
           backgroundColor: 0xF6F0E6,
           backgroundAlpha: 0.94,
@@ -930,24 +930,24 @@ export default class GameScene extends Phaser.Scene {
           borderWidth: 3,
           shadowAlpha: 0.3,
           shadowOffset: 15,
-          titleX: controlX,
+          titleX: controlX - 60,
           titleY: layout.gridStartY,
           titleStyle: {
-            fontSize: isCompactDesktop ? '28px' : '32px',
+            fontSize: isCompactDesktop ? '32px' : '36px',
             color: '#1B4965',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
             stroke: '#3A7CA5',
             strokeThickness: 2
           },
-          bodyX: controlX,
-          bodyY: layout.gridStartY + 48,
+          bodyX: controlX - 60,
+          bodyY: layout.gridStartY + 56,
           bodyStyle: {
-            fontSize: isCompactDesktop ? '18px' : '20px',
+            fontSize: isCompactDesktop ? '22px' : '24px',
             color: '#2F4858',
             fontFamily: 'Arial',
-            wordWrap: { width: controlWidth },
-            lineSpacing: 6
+            wordWrap: { width: controlWidth + 60 },
+            lineSpacing: 8
           }
         };
 
@@ -1338,7 +1338,7 @@ export default class GameScene extends Phaser.Scene {
         titleX: width / 2,
         titleY: statsContentTop + 5,
         titleStyle: {
-          fontSize: '28px',
+          fontSize: '32px',
           color: '#9B2226',
           fontFamily: 'Georgia',
           fontStyle: 'bold',
@@ -1346,18 +1346,18 @@ export default class GameScene extends Phaser.Scene {
           strokeThickness: 2
         },
         baseX: width / 2,
-        labelY: statsContentTop + 48,
-        valueOffset: 32,
+        labelY: statsContentTop + 52,
+        valueOffset: 36,
         columnSpacing: 280,
         labelStyle: {
-          fontSize: '18px',
+          fontSize: '22px',
           color: '#1B4965',
           fontFamily: 'Arial',
           fontStyle: 'bold'
         },
         valueStyles: {
           level: {
-            fontSize: '30px',
+            fontSize: '34px',
             color: '#9B2226',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -1365,7 +1365,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           hints: {
-            fontSize: '30px',
+            fontSize: '34px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -1373,7 +1373,7 @@ export default class GameScene extends Phaser.Scene {
             strokeThickness: 2
           },
           houses: {
-            fontSize: '30px',
+            fontSize: '34px',
             color: '#3A7CA5',
             fontFamily: 'Georgia',
             fontStyle: 'bold',
@@ -1403,7 +1403,7 @@ export default class GameScene extends Phaser.Scene {
         colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
         hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
         textStyle: {
-          fontSize: '28px',
+          fontSize: '32px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
@@ -1425,7 +1425,7 @@ export default class GameScene extends Phaser.Scene {
         colors: [0xB56576, 0xB56576, 0x9B2226, 0x9B2226],
         hoverColors: [0xC97585, 0xC97585, 0xAF3336, 0xAF3336],
         textStyle: {
-          fontSize: '28px',
+          fontSize: '32px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
@@ -1468,7 +1468,7 @@ export default class GameScene extends Phaser.Scene {
         colors: [0x3A7CA5, 0x3A7CA5, 0x1B4965, 0x1B4965],
         hoverColors: [0x4F8FBF, 0x4F8FBF, 0x2F6690, 0x2F6690],
         textStyle: {
-          fontSize: '28px',
+          fontSize: '32px',
           color: '#F6F0E6',
           fontFamily: 'Arial',
           fontStyle: 'bold',
@@ -2521,15 +2521,15 @@ export default class GameScene extends Phaser.Scene {
     // Контент
     const contentText = type === 'about' ? this.aboutText : this.controlText;
     const bodyText = this.add.text(
-      modalX + 30,
-      modalY + 100,
+      modalX + 40,
+      modalY + 110,
       contentText,
       {
-        fontSize: '24px',
+        fontSize: '28px',
         color: '#2F4858',
         fontFamily: 'Arial',
-        wordWrap: { width: modalWidth - 60 },
-        lineSpacing: 6
+        wordWrap: { width: modalWidth - 80 },
+        lineSpacing: 8
       }
     );
     this.modalContainer.add(bodyText);
@@ -2758,12 +2758,13 @@ export default class GameScene extends Phaser.Scene {
       this.blockedCells.add(pos);
 
       if (!targetCell.xMark) {
+        const xMarkFontSize = Math.floor(this.CELL_SIZE * 0.45);
         const xMark = this.add.text(
           targetCell.x + this.CELL_SIZE / 2,
           targetCell.y + this.CELL_SIZE / 2,
           'X',
           {
-            fontSize: '36px',
+            fontSize: `${xMarkFontSize}px`,
             color: '#ff0000',
             fontFamily: 'Arial',
             fontStyle: 'bold'
@@ -3107,7 +3108,7 @@ export default class GameScene extends Phaser.Scene {
       modalY + 60,
       'Уровень пройден!',
       {
-        fontSize: '48px',
+        fontSize: this.isMobile ? '36px' : '48px',
         color: '#FFD700',
         fontFamily: 'Georgia',
         fontStyle: 'bold',
@@ -3168,7 +3169,7 @@ export default class GameScene extends Phaser.Scene {
       buttonY,
       'Перейти на следующий уровень',
       {
-        fontSize: '28px',
+        fontSize: this.isMobile ? '24px' : '28px',
         color: '#F6F0E6',
         fontFamily: 'Arial',
         fontStyle: 'bold',

@@ -558,8 +558,8 @@ export default class MenuScene extends Phaser.Scene {
 
     const width = this.screenWidth;
     const height = this.screenHeight;
-    const modalWidth = Math.min(width - 60, 1000);
-    const modalHeight = Math.min(height - 100, 1400);
+    const modalWidth = Math.min(width - 40, 1000);
+    const modalHeight = Math.min(height - 60, 1500);
     const modalX = width / 2 - modalWidth / 2;
     const modalY = height / 2 - modalHeight / 2;
 
@@ -604,8 +604,8 @@ export default class MenuScene extends Phaser.Scene {
     container.add(title);
 
     // Создаем тайлы уровней
-    const tileSize = this.isMobile ? 55 : 65;
-    const tileGap = this.isMobile ? 8 : 10;
+    const tileSize = this.isMobile ? 65 : 75;
+    const tileGap = this.isMobile ? 10 : 12;
     const tilesPerRow = Math.floor((modalWidth - 60) / (tileSize + tileGap));
     const startY = modalY + 100;
 
@@ -717,7 +717,7 @@ export default class MenuScene extends Phaser.Scene {
     container.add(tile);
 
     const label = this.add.text(x, y, level.toString(), {
-      fontSize: this.isMobile ? '20px' : '24px',
+      fontSize: this.isMobile ? '24px' : '28px',
       color: isAvailable ? '#F6F0E6' : '#CCCCCC',
       fontFamily: 'Arial',
       fontStyle: 'bold'
@@ -728,8 +728,8 @@ export default class MenuScene extends Phaser.Scene {
   showRulesModal() {
     const width = this.screenWidth;
     const height = this.screenHeight;
-    const modalWidth = Math.min(width - 100, 900);
-    const modalHeight = Math.min(height - 120, 1200);
+    const modalWidth = Math.min(width - 40, 950);
+    const modalHeight = Math.min(height - 60, 1400);
     const modalX = width / 2 - modalWidth / 2;
     const modalY = height / 2 - modalHeight / 2;
 
@@ -792,17 +792,17 @@ export default class MenuScene extends Phaser.Scene {
 
 Символы "X" показывают ячейки, заблокированные построенными домами. При клике на "X" все связанные метки подсвечиваются желтым.`;
 
-    const fontSize = this.isMobile ? '18px' : '20px';
+    const fontSize = this.isMobile ? '24px' : '26px';
     const contentText = this.add.text(
-      modalX + 30,
-      modalY + 90,
+      modalX + 40,
+      modalY + 110,
       rulesText,
       {
         fontSize: fontSize,
         color: '#2F4858',
         fontFamily: 'Arial',
-        wordWrap: { width: modalWidth - 60 },
-        lineSpacing: 6
+        wordWrap: { width: modalWidth - 80 },
+        lineSpacing: 8
       }
     );
     container.add(contentText);

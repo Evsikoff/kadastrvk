@@ -43,8 +43,8 @@ const getGameSize = () => {
   if (containerInfo.isEmbedded) {
     const optimalSize = ContainerDetector.getOptimalGameSize({
       baseWidth: 1920,
-      minAspectRatio: 0.5,  // Поддержка портретной ориентации (9:16)
-      maxAspectRatio: 2.0   // Поддержка широкой ландшафтной (16:9)
+      minAspectRatio: 0.3,  // Поддержка узкой портретной ориентации
+      maxAspectRatio: 3.0   // Поддержка ультра-широкой ландшафтной
     });
 
     console.log(`🎮 Detected ${containerInfo.containerType} context, using optimal size: ${optimalSize.width}x${optimalSize.height}`);

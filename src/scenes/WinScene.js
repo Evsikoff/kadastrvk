@@ -7,70 +7,143 @@ export default class WinScene extends Phaser.Scene {
   }
 
   create() {
+    const width = this.scale.gameSize.width;
+    const height = this.scale.gameSize.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const isMobile = !this.sys.game.device.os.desktop;
+
     // Очищаем сохраненный прогресс при завершении всех уровней
     GameProgress.clearProgress();
 
     // Фон
-    this.add.rectangle(960, 540, 1920, 1080, 0x1a1a2e);
+    if (isMobile) {
+      this.add.rectangle(centerX, centerY, width, height, 0x1a1a2e);
+    } else {
+      const bg = this.add.graphics();
+      bg.fillGradientStyle(0x1a1a2e, 0x0f3460, 0x1a1a2e, 0x0f3460, 1);
+      bg.fillRect(0, 0, width, height);
+    }
     
     // Заголовок
     const title = this.add.text(
-      960,
-      300,
+      centerX,
+      centerY - (isMobile ? 150 : 200),
       'Поздравляем!',
       {
-        fontSize: '96px',
+        fontSize: isMobile ? '64px' : '96px',
         color: '#FFD700',
-        fontFamily: 'Arial',
-        fontStyle: 'bold'
+        fontFamily: 'Georgia',
+        fontStyle: 'bold',
+        stroke: '#9B2226',
+        strokeThickness: isMobile ? 4 : 6,
+        shadow: {
+          offsetX: 4,
+          offsetY: 4,
+          color: '#000000',
+          blur: 10,
+          fill: true
+        }
       }
     ).setOrigin(0.5);
     
     // Подзаголовок
     const subtitle = this.add.text(
-      960,
-      450,
+      centerX,
+      centerY - (isMobile ? 50 : 80),
       'Вы прошли все уровни!',
       {
-        fontSize: '48px',
+        fontSize: isMobile ? '32px' : '48px',
         color: '#ffffff',
-        fontFamily: 'Arial'
+        fontFamily: 'Arial',
+        fontStyle: 'bold',
+        stroke: '#1B4965',
+        strokeThickness: 2
       }
     ).setOrigin(0.5);
     
     // Кнопка рестарта
-    const restartButton = this.add.rectangle(960, 650, 300, 80, 0x4CAF50)
-      .setInteractive({ useHandCursor: true });
-    
+    const buttonWidth = isMobile ? 360 : 420;
+    const buttonHeight = isMobile ? 80 : 100;
+    const buttonY = centerY + (isMobile ? 120 : 150);
+
+    const restartButtonContainer = this.add.container(centerX, buttonY);
+
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(-buttonWidth / 2 + 5, -buttonHeight / 2 + 5, buttonWidth, buttonHeight, 16);
+    restartButtonContainer.add(shadow);
+
+    const restartButton = this.add.graphics();
+    const drawButton = (state) => {
+      const colors = state === 'hover'
+        ? [0x4CAF50, 0x4CAF50, 0x2E7D32, 0x2E7D32]
+        : [0x43A047, 0x43A047, 0x1B5E20, 0x1B5E20];
+
+      restartButton.clear();
+      restartButton.fillGradientStyle(colors[0], colors[1], colors[2], colors[3], 1);
+      restartButton.fillRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, 16);
+      restartButton.lineStyle(4, 0xFFD700, 1);
+      restartButton.strokeRoundedRect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight, 16);
+    };
+
+    drawButton('default');
+    restartButtonContainer.add(restartButton);
+
     const restartText = this.add.text(
-      960,
-      650,
+      0,
+      0,
       'Начать заново',
       {
-        fontSize: '32px',
+        fontSize: isMobile ? '32px' : '40px',
         color: '#ffffff',
-        fontFamily: 'Arial'
+        fontFamily: 'Arial',
+        fontStyle: 'bold',
+        stroke: '#1B5E20',
+        strokeThickness: 2
       }
     ).setOrigin(0.5);
+    restartButtonContainer.add(restartText);
+
+    const interactiveRect = new Phaser.Geom.Rectangle(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight);
+    restartButton.setInteractive(interactiveRect, Phaser.Geom.Rectangle.Contains);
     
     restartButton.on('pointerdown', () => {
-      // Начинаем игру с первого уровня
-      this.scene.start('GameScene', { mapIndex: 0 });
+      this.tweens.add({
+        targets: restartButtonContainer,
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          this.scene.start('GameScene', { mapIndex: 0 });
+        }
+      });
     });
     
     restartButton.on('pointerover', () => {
-      restartButton.setFillStyle(0x45a049);
+      drawButton('hover');
+      this.tweens.add({
+        targets: restartButtonContainer,
+        scale: 1.05,
+        duration: 200,
+        ease: 'Power2'
+      });
     });
     
     restartButton.on('pointerout', () => {
-      restartButton.setFillStyle(0x4CAF50);
+      drawButton('default');
+      this.tweens.add({
+        targets: restartButtonContainer,
+        scale: 1,
+        duration: 200,
+        ease: 'Power2'
+      });
     });
     
     // Анимация появления
     title.setAlpha(0);
     subtitle.setAlpha(0);
-    restartButton.setAlpha(0);
-    restartText.setAlpha(0);
+    restartButtonContainer.setAlpha(0);
     
     this.tweens.add({
       targets: title,
@@ -88,7 +161,7 @@ export default class WinScene extends Phaser.Scene {
     });
     
     this.tweens.add({
-      targets: [restartButton, restartText],
+      targets: restartButtonContainer,
       alpha: 1,
       duration: 1000,
       delay: 1000,
@@ -96,15 +169,15 @@ export default class WinScene extends Phaser.Scene {
     });
     
     // Постоянный салют
-    this.createContinuousFireworks();
+    this.createContinuousFireworks(width, height);
   }
 
-  createContinuousFireworks() {
+  createContinuousFireworks(width, height) {
     const colors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF];
     
     const launchFirework = () => {
-      const x = Phaser.Math.Between(300, 1620);
-      const y = Phaser.Math.Between(150, 400);
+      const x = Phaser.Math.Between(width * 0.1, width * 0.9);
+      const y = Phaser.Math.Between(height * 0.1, height * 0.5);
       const color = Phaser.Utils.Array.GetRandom(colors);
       
       const graphics = this.make.graphics({ x: 0, y: 0, add: false });
