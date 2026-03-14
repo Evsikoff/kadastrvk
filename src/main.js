@@ -7,47 +7,96 @@ import { ContainerDetector } from './utils/ContainerDetector.js';
 
 const MOBILE_PORTRAIT_SIZE = { width: 1080, height: 1920 };
 const MOBILE_LANDSCAPE_SIZE = { width: 1920, height: 1080 };
+const EMBEDDED_CONTAINER_PADDING_X = 16;
+const EMBEDDED_CONTAINER_PADDING_TOP = 16;
+const EMBEDDED_CONTAINER_PADDING_BOTTOM = 32;
 const isMobileDevice = /android|iphone|ipad|ipod|windows phone|mobile/i.test(
   navigator.userAgent ?? ''
 );
+
+let vkClientRect = null;
 
 /**
  * Получает размеры контейнера game-container
  */
 const getContainerSize = () => {
   const container = document.getElementById('game-container');
+
   if (container) {
-    return {
-      width: container.clientWidth,
-      height: container.clientHeight
-    };
+    const width = Math.round(container.clientWidth);
+    const height = Math.round(container.clientHeight);
+
+    if (width > 0 && height > 0) {
+      return { width, height };
+    }
   }
+
   // Fallback на размеры viewport
   return ContainerDetector.getContainerSize();
+};
+
+/**
+ * Получает размер контейнера из VK Bridge с fallback
+ */
+const getEmbeddedContainerSize = () => {
+  const baseWidth = Math.round(vkClientRect?.width ?? window.innerWidth);
+  const baseHeight = Math.round(vkClientRect?.height ?? window.innerHeight);
+
+  const width = Math.max(320, baseWidth - EMBEDDED_CONTAINER_PADDING_X * 2);
+  const height = Math.max(320, baseHeight - EMBEDDED_CONTAINER_PADDING_TOP - EMBEDDED_CONTAINER_PADDING_BOTTOM);
+
+  return {
+    width,
+    height
+  };
+};
+
+/**
+ * Применяет отступы контейнера для iframe/webview
+ */
+const applyEmbeddedContainerPadding = (isEmbedded) => {
+  const container = document.getElementById('game-container');
+  if (!container) {
+    return;
+  }
+
+  if (isEmbedded) {
+    container.style.paddingTop = `${EMBEDDED_CONTAINER_PADDING_TOP}px`;
+    container.style.paddingRight = `${EMBEDDED_CONTAINER_PADDING_X}px`;
+    container.style.paddingBottom = `${EMBEDDED_CONTAINER_PADDING_BOTTOM}px`;
+    container.style.paddingLeft = `${EMBEDDED_CONTAINER_PADDING_X}px`;
+    container.style.width = '100%';
+    container.style.height = '100%';
+  } else {
+    container.style.padding = '0';
+    container.style.width = '100vw';
+    container.style.height = '100vh';
+  }
 };
 
 /**
  * Определяет размер игры с учетом контекста (iframe/webView или обычный браузер)
  */
 const getGameSize = () => {
-  // Получаем информацию о контейнере
   const containerInfo = ContainerDetector.getContainerInfo();
 
-  // Получаем размеры game-container
-  const containerSize = getContainerSize();
-  const aspectRatio = containerSize.width / containerSize.height;
-
-  console.log(`📦 Container size: ${containerSize.width}x${containerSize.height}, aspect ratio: ${aspectRatio.toFixed(3)}`);
-
-  // Если приложение открыто в iframe или webView, используем автоматическое определение размеров
   if (containerInfo.isEmbedded) {
+    const embeddedSize = getEmbeddedContainerSize();
+    const aspectRatio = embeddedSize.width / embeddedSize.height;
+
     const optimalSize = ContainerDetector.getOptimalGameSize({
       baseWidth: 1920,
-      minAspectRatio: 0.3,  // Поддержка узкой портретной ориентации
-      maxAspectRatio: 3.0   // Поддержка ультра-широкой ландшафтной
+      minAspectRatio: 0.3,
+      maxAspectRatio: 3.0,
+      containerSize: embeddedSize
     });
 
-    console.log(`🎮 Detected ${containerInfo.containerType} context, using optimal size: ${optimalSize.width}x${optimalSize.height}`);
+    console.log(
+      `📦 Embedded container size: ${embeddedSize.width}x${embeddedSize.height}, aspect ratio: ${aspectRatio.toFixed(3)}`
+    );
+    console.log(
+      `🎮 Detected ${containerInfo.containerType} context, using optimal size: ${optimalSize.width}x${optimalSize.height}`
+    );
 
     return {
       width: optimalSize.width,
@@ -55,10 +104,12 @@ const getGameSize = () => {
     };
   }
 
-  // Для обычного браузера используем размеры контейнера напрямую
+  const containerSize = getContainerSize();
+  const aspectRatio = containerSize.width / containerSize.height;
+
+  console.log(`📦 Container size: ${containerSize.width}x${containerSize.height}, aspect ratio: ${aspectRatio.toFixed(3)}`);
+
   if (!isMobileDevice) {
-    // Используем размеры контейнера для заполнения на 100%
-    // Canvas будет масштабироваться через Phaser.Scale.FIT
     return {
       width: Math.round(containerSize.width),
       height: Math.round(containerSize.height)
@@ -93,8 +144,10 @@ window.addEventListener('contextmenu', (e) => {
   e.preventDefault();
 });
 
-// Обработчик изменения размера для всех устройств
 const containerInfo = ContainerDetector.getContainerInfo();
+applyEmbeddedContainerPadding(containerInfo.isEmbedded);
+
+const game = new Phaser.Game(config);
 
 // Функция для обработки изменения размеров
 const handleResize = () => {
@@ -115,16 +168,25 @@ const debouncedResize = () => {
   await VKBridge.init();
   await VKBridge.preloadRewardAd();
 
+  vkClientRect = await VKBridge.getClientRect();
+  if (vkClientRect) {
+    console.log(`🖼️ VK iFrame rect: ${vkClientRect.width}x${vkClientRect.height}`);
+  }
+
+  handleResize();
+
   // Подписываемся на события VK Bridge
   VKBridge.subscribe((e) => {
     if (e.detail.type === 'VKWebAppUpdateConfig') {
       console.log('🔄 VK Config updated, checking for resize...');
       debouncedResize();
     }
+
+    if (e.detail.type === 'VKWebAppUpdateViewSettings') {
+      debouncedResize();
+    }
   });
 })();
-
-const game = new Phaser.Game(config);
 
 // Устанавливаем обработчики событий resize для всех случаев
 window.addEventListener('resize', debouncedResize);
@@ -133,9 +195,7 @@ if (isMobileDevice) {
   window.addEventListener('orientationchange', handleResize);
 }
 
-// Для iframe также отслеживаем изменения размера родительского окна
 if (containerInfo.isIframe) {
-  // Проверяем изменения размеров с интервалом
   let lastWidth = window.innerWidth;
   let lastHeight = window.innerHeight;
 
@@ -148,7 +208,6 @@ if (containerInfo.isIframe) {
   }, 500);
 }
 
-// Логируем информацию о контейнере при запуске (для отладки)
 if (window.location.search.includes('debug') || containerInfo.isEmbedded) {
   ContainerDetector.logInfo();
 }
