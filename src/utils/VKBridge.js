@@ -6,11 +6,33 @@ export class VKBridge {
   static adsPreloaded = false;
 
   /**
+   * Unified sender with request/response logging
+   * @param {string} method
+   * @param {Object} params
+   * @returns {Promise<any>}
+   */
+  static async send(method, params = {}) {
+    console.log(`📨 VK Bridge request: ${method}`, params);
+
+    try {
+      const response = await bridge.send(method, params);
+      console.log(`📬 VK Bridge response: ${method}`, response);
+      return response;
+    } catch (error) {
+      console.warn(`❌ VK Bridge error: ${method}`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Subscribe to VK Bridge events
    * @param {Function} callback - Event handler
    */
   static subscribe(callback) {
-    bridge.subscribe(callback);
+    bridge.subscribe((event) => {
+      console.log('📡 VK Bridge event:', event.detail?.type, event.detail?.data ?? {});
+      callback(event);
+    });
   }
 
   /**
@@ -18,7 +40,7 @@ export class VKBridge {
    */
   static async init() {
     try {
-      await bridge.send('VKWebAppInit');
+      await this.send('VKWebAppInit');
       this.isInitialized = true;
       console.log('VK Bridge initialized');
       return true;
@@ -40,7 +62,7 @@ export class VKBridge {
     }
 
     try {
-      const result = await bridge.send('VKWebAppStorageGet', {
+      const result = await this.send('VKWebAppStorageGet', {
         keys: [key]
       });
 
@@ -68,7 +90,7 @@ export class VKBridge {
     }
 
     try {
-      await bridge.send('VKWebAppStorageSet', {
+      await this.send('VKWebAppStorageSet', {
         key: key,
         value: value.toString()
       });
@@ -90,7 +112,7 @@ export class VKBridge {
     }
 
     try {
-      const result = await bridge.send('VKWebAppCheckNativeAds', {
+      const result = await this.send('VKWebAppCheckNativeAds', {
         ad_format: 'reward'
       });
       this.adsPreloaded = result.result;
@@ -113,7 +135,7 @@ export class VKBridge {
     }
 
     try {
-      const result = await bridge.send('VKWebAppShowNativeAds', {
+      const result = await this.send('VKWebAppShowNativeAds', {
         ad_format: 'reward'
       });
       console.log('Reward ad result:', result);
@@ -135,7 +157,7 @@ export class VKBridge {
     }
 
     try {
-      const result = await bridge.send('VKWebAppShowNativeAds', {
+      const result = await this.send('VKWebAppShowNativeAds', {
         ad_format: 'interstitial'
       });
       console.log('Interstitial ad result:', result);
@@ -144,5 +166,26 @@ export class VKBridge {
       console.warn('Failed to show interstitial ad:', error);
       return false;
     }
+  }
+
+  /**
+   * Get iFrame client rect from VK host if available
+   * @returns {Promise<{width:number,height:number,left?:number,top?:number}|null>}
+   */
+  static async getClientRect() {
+    if (!this.isInitialized) {
+      return null;
+    }
+
+    try {
+      const result = await this.send('VKWebAppGetClientRect');
+      if (typeof result?.width === 'number' && typeof result?.height === 'number') {
+        return result;
+      }
+    } catch (error) {
+      console.warn('Failed to get VK client rect:', error);
+    }
+
+    return null;
   }
 }
