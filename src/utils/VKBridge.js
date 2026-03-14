@@ -9,8 +9,11 @@ export class VKBridge {
    * Initialize VK Bridge
    */
   static async init() {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('VKWebAppInit timeout')), 3000)
+    );
     try {
-      await bridge.send('VKWebAppInit');
+      await Promise.race([bridge.send('VKWebAppInit'), timeout]);
       this.isInitialized = true;
       console.log('VK Bridge initialized');
       return true;
@@ -81,10 +84,14 @@ export class VKBridge {
       return false;
     }
 
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('VKWebAppCheckNativeAds timeout')), 3000)
+    );
     try {
-      const result = await bridge.send('VKWebAppCheckNativeAds', {
-        ad_format: 'reward'
-      });
+      const result = await Promise.race([
+        bridge.send('VKWebAppCheckNativeAds', { ad_format: 'reward' }),
+        timeout
+      ]);
       this.adsPreloaded = result.result;
       console.log('Reward ads preloaded:', result.result);
       return result.result;
