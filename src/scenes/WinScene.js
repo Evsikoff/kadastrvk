@@ -12,6 +12,22 @@ export default class WinScene extends Phaser.Scene {
     const centerX = width / 2;
     const centerY = height / 2;
     const isMobile = !this.sys.game.device.os.desktop;
+    const isPortrait = (width / height) < 1.2;
+
+    // Слушаем изменение размера
+    let resizeTimeout;
+    const onResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (this.scene.isActive()) {
+          this.scene.restart();
+        }
+      }, 250);
+    };
+    this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
+    });
 
     // Очищаем сохраненный прогресс при завершении всех уровней
     GameProgress.clearProgress();
@@ -26,12 +42,15 @@ export default class WinScene extends Phaser.Scene {
     }
     
     // Заголовок
+    const titleFontSize = isPortrait ? Math.min(width * 0.12, 80) : (isMobile ? '64px' : '96px');
+    const titleY = isPortrait ? height * 0.3 : centerY - (isMobile ? 150 : 200);
+
     const title = this.add.text(
       centerX,
-      centerY - (isMobile ? 150 : 200),
+      titleY,
       'Поздравляем!',
       {
-        fontSize: isMobile ? '64px' : '96px',
+        fontSize: titleFontSize,
         color: '#FFD700',
         fontFamily: 'Georgia',
         fontStyle: 'bold',
@@ -48,12 +67,15 @@ export default class WinScene extends Phaser.Scene {
     ).setOrigin(0.5);
     
     // Подзаголовок
+    const subtitleFontSize = isPortrait ? Math.min(width * 0.06, 40) : (isMobile ? '32px' : '48px');
+    const subtitleY = isPortrait ? title.y + (isMobile ? 70 : 100) : centerY - (isMobile ? 50 : 80);
+
     const subtitle = this.add.text(
       centerX,
-      centerY - (isMobile ? 50 : 80),
+      subtitleY,
       'Вы прошли все уровни!',
       {
-        fontSize: isMobile ? '32px' : '48px',
+        fontSize: subtitleFontSize,
         color: '#ffffff',
         fontFamily: 'Arial',
         fontStyle: 'bold',
@@ -63,9 +85,9 @@ export default class WinScene extends Phaser.Scene {
     ).setOrigin(0.5);
     
     // Кнопка рестарта
-    const buttonWidth = isMobile ? 360 : 420;
+    const buttonWidth = Math.min(width * 0.8, isMobile ? 360 : 420);
     const buttonHeight = isMobile ? 80 : 100;
-    const buttonY = centerY + (isMobile ? 120 : 150);
+    const buttonY = isPortrait ? height * 0.75 : centerY + (isMobile ? 120 : 150);
 
     const restartButtonContainer = this.add.container(centerX, buttonY);
 

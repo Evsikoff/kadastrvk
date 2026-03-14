@@ -32,38 +32,36 @@ export default class GameScene extends Phaser.Scene {
     // Try to load saved level from VK Storage/localStorage
     const savedLevel = await GameProgress.loadLevel();
     this.startMapIndex = data.mapIndex ?? savedLevel ?? 0;
+
+    const { width, height } = this.scale.gameSize;
+    const aspectRatio = width / height;
+
     this.isMobile = !this.sys.game.device.os.desktop;
-    this.currentOrientation =
-      this.scale.orientation === Phaser.Scale.PORTRAIT ? 'portrait' : 'landscape';
 
-    if (this.isMobile) {
-      if (this.currentOrientation === 'portrait') {
-        // Вычисляем CELL_SIZE так, чтобы игровое поле было равно по ширине контейнеру статистики
-        const screenWidth = this.scale.gameSize.width;
-        const statsWidth = Math.min(screenWidth - 80, 920);
-        const statsPadding = 22;
-        const gridPadding = 16;
+    // Решаем, какую раскладку использовать на основе соотношения сторон и ширины
+    if (aspectRatio < 1.2) {
+      // Портретная раскладка (мобильный вид)
+      this.currentOrientation = 'portrait';
+      const statsWidth = Math.min(width - 80, 920);
+      const statsPadding = 22;
+      const gridPadding = 16;
 
-        // Целевая ширина контейнера сетки = ширина контейнера статистики
-        const targetGridContainerSize = statsWidth + statsPadding * 2;
-        const gridSize = targetGridContainerSize - gridPadding * 2;
-        this.CELL_SIZE = Math.floor(gridSize / this.GRID_SIZE);
-      } else {
-        this.CELL_SIZE = 80;
-      }
-    } else {
-      const desktopWidth = this.scale.gameSize.width;
-      const desktopHeight = this.scale.gameSize.height;
-      const isCompactDesktop = desktopHeight <= 720;
-      const isUltraCompactDesktop = desktopHeight <= 560;
+      const targetGridContainerSize = statsWidth + statsPadding * 2;
+      const gridSize = targetGridContainerSize - gridPadding * 2;
+      this.CELL_SIZE = Math.floor(gridSize / this.GRID_SIZE);
+    } else if (aspectRatio > 1.6 && width > 1100) {
+      // Десктопная раскладка (с боковыми панелями)
+      this.currentOrientation = 'landscape';
+      const isCompactDesktop = height <= 720;
+      const isUltraCompactDesktop = height <= 560;
 
       const widthOffset = isUltraCompactDesktop ? 360 : isCompactDesktop ? 420 : 520;
       const minWidthBudget = isUltraCompactDesktop ? 360 : isCompactDesktop ? 420 : 480;
       const heightOffset = isUltraCompactDesktop ? 220 : isCompactDesktop ? 180 : 360;
       const minHeightBudget = isUltraCompactDesktop ? 300 : isCompactDesktop ? 360 : 480;
 
-      const availableWidth = Math.max(desktopWidth - widthOffset, minWidthBudget);
-      const availableHeight = Math.max(desktopHeight - heightOffset, minHeightBudget);
+      const availableWidth = Math.max(width - widthOffset, minWidthBudget);
+      const availableHeight = Math.max(height - heightOffset, minHeightBudget);
       const cellSizeFromWidth = Math.floor(availableWidth / this.GRID_SIZE);
       const cellSizeFromHeight = Math.floor(availableHeight / this.GRID_SIZE);
       const desiredCellSize = Math.min(cellSizeFromWidth, cellSizeFromHeight);
@@ -81,6 +79,13 @@ export default class GameScene extends Phaser.Scene {
       } else {
         this.CELL_SIZE = isCompactDesktop ? 60 : 85;
       }
+    } else {
+      // Ландшафтная мобильная раскладка
+      this.currentOrientation = 'landscape';
+      // Подбираем размер ячейки под высоту экрана, оставляя место под UI
+      const availableHeight = height - 280;
+      this.CELL_SIZE = Math.floor(availableHeight / this.GRID_SIZE);
+      this.CELL_SIZE = Phaser.Math.Clamp(this.CELL_SIZE, 45, 85);
     }
   }
 
@@ -294,8 +299,8 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.screenWidth = this.scale.gameSize.width;
     this.screenHeight = this.scale.gameSize.height;
-    this.currentOrientation =
-      this.scale.orientation === Phaser.Scale.PORTRAIT ? 'portrait' : 'landscape';
+    const aspectRatio = this.screenWidth / this.screenHeight;
+    this.currentOrientation = aspectRatio < 1.2 ? 'portrait' : 'landscape';
 
     // Добавляем фон
     if (this.isMobile) {
@@ -331,18 +336,23 @@ export default class GameScene extends Phaser.Scene {
 
     this.loadMap(this.startMapIndex);
 
-    this.scale.on(
-      Phaser.Scale.Events.ORIENTATION_CHANGE,
-      this.handleOrientationChange,
-      this
-    );
+    // Слушаем изменение размера и ориентации
+    let resizeTimeout;
+    const onResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (this.scene.isActive()) {
+          this.scene.restart({ mapIndex: this.currentMapIndex });
+        }
+      }, 250);
+    };
+
+    this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
+    this.scale.on(Phaser.Scale.Events.ORIENTATION_CHANGE, onResize);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scale.off(
-        Phaser.Scale.Events.ORIENTATION_CHANGE,
-        this.handleOrientationChange,
-        this
-      );
+      this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
+      this.scale.off(Phaser.Scale.Events.ORIENTATION_CHANGE, onResize);
     });
   }
 
@@ -398,19 +408,18 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createGrid() {
-    this.gridContainer = this.add.container(0, 0);
-
-    // Используем layout для правильного позиционирования
     const startX = (this.screenWidth - this.layout.gridSize) / 2;
     const startY = this.layout.gridStartY + this.layout.gridPadding;
     
+    this.gridContainer = this.add.container(startX, startY);
+
     // Создаем ячейки
     for (let row = 0; row < this.GRID_SIZE; row++) {
       this.grid[row] = [];
       for (let col = 0; col < this.GRID_SIZE; col++) {
         const cellType = this.currentMap.regionMap[row][col];
-        const x = startX + col * this.CELL_SIZE;
-        const y = startY + row * this.CELL_SIZE;
+        const x = col * this.CELL_SIZE;
+        const y = row * this.CELL_SIZE;
         
         // Фон ячейки
         const cellBg = this.add.image(x, y, `cell_${cellType}`);
@@ -444,18 +453,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   drawBorders() {
-    // Используем layout для правильного позиционирования
-    const startX = (this.screenWidth - this.layout.gridSize) / 2;
-    const startY = this.layout.gridStartY + this.layout.gridPadding;
-    
     // Горизонтальные границы
     for (let row = 0; row < this.GRID_SIZE - 1; row++) {
       for (let col = 0; col < this.GRID_SIZE; col++) {
         const currentType = this.currentMap.regionMap[row][col];
         const nextType = this.currentMap.regionMap[row + 1][col];
         
-        const x = startX + col * this.CELL_SIZE;
-        const y = startY + (row + 1) * this.CELL_SIZE;
+        const x = col * this.CELL_SIZE;
+        const y = (row + 1) * this.CELL_SIZE;
         
         if (currentType === nextType) {
           // Полупрозрачная серая линия
@@ -477,8 +482,8 @@ export default class GameScene extends Phaser.Scene {
         const currentType = this.currentMap.regionMap[row][col];
         const nextType = this.currentMap.regionMap[row][col + 1];
         
-        const x = startX + (col + 1) * this.CELL_SIZE;
-        const y = startY + row * this.CELL_SIZE;
+        const x = (col + 1) * this.CELL_SIZE;
+        const y = row * this.CELL_SIZE;
         
         if (currentType === nextType) {
           // Полупрозрачная серая линия
@@ -557,9 +562,19 @@ export default class GameScene extends Phaser.Scene {
     const width = this.screenWidth;
     const height = this.screenHeight;
     const gridSize = this.GRID_SIZE * this.CELL_SIZE;
-    const isPortrait = this.currentOrientation === 'portrait';
-    const layoutType = this.isMobile ? (isPortrait ? 'mobile-portrait' : 'mobile-landscape') : 'desktop';
     const aspectRatio = width / height;
+
+    // Динамически определяем тип раскладки
+    let layoutType;
+    if (aspectRatio < 1.2) {
+      layoutType = 'mobile-portrait';
+    } else if (aspectRatio > 1.6 && width > 1100) {
+      layoutType = 'desktop';
+    } else {
+      layoutType = 'mobile-landscape';
+    }
+
+    const isPortrait = layoutType === 'mobile-portrait';
 
     const layout = {
       type: layoutType,
@@ -567,7 +582,7 @@ export default class GameScene extends Phaser.Scene {
       height,
       screenCenterX: width / 2,
       gridSize,
-      gridPadding: this.isMobile ? (isPortrait ? 16 : 22) : 25,
+      gridPadding: layoutType === 'mobile-portrait' ? 16 : (layoutType === 'mobile-landscape' ? 22 : 25),
       gridFramePadding: this.isMobile ? (isPortrait ? 14 : 18) : 20,
       gridFrameRadius: this.isMobile ? 14 : 15,
       gridFrameBorderWidth: 4,
@@ -2602,26 +2617,6 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  handleOrientationChange(orientation) {
-    const newOrientation =
-      orientation === Phaser.Scale.PORTRAIT ? 'portrait' : 'landscape';
-
-    if (newOrientation === this.currentOrientation) {
-      return;
-    }
-
-    this.currentOrientation = newOrientation;
-
-    if (this.isMobile) {
-      const targetSize =
-        newOrientation === 'portrait'
-          ? { width: 1080, height: 1920 }
-          : { width: 1920, height: 1080 };
-
-      this.scale.resize(targetSize.width, targetSize.height);
-      this.scene.restart({ mapIndex: this.currentMapIndex });
-    }
-  }
 
   onCellClick(cell) {
     if (this.isBuilding) {

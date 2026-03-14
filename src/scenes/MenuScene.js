@@ -24,8 +24,24 @@ export default class MenuScene extends Phaser.Scene {
     this.screenWidth = this.scale.gameSize.width;
     this.screenHeight = this.scale.gameSize.height;
     this.isMobile = !this.sys.game.device.os.desktop;
-    this.currentOrientation =
-      this.scale.orientation === Phaser.Scale.PORTRAIT ? 'portrait' : 'landscape';
+    // Используем порог 1.2 для определения портретного режима (включая квадратные экраны)
+    const aspectRatio = this.screenWidth / this.screenHeight;
+    this.currentOrientation = aspectRatio < 1.2 ? 'portrait' : 'landscape';
+
+    // Слушаем изменение размера
+    let resizeTimeout;
+    const onResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (this.scene.isActive()) {
+          this.scene.restart();
+        }
+      }, 250);
+    };
+    this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
+    });
 
     // Добавляем фон
     if (this.isMobile) {
@@ -80,15 +96,22 @@ export default class MenuScene extends Phaser.Scene {
   createMenu() {
     const centerX = this.screenWidth / 2;
     const centerY = this.screenHeight / 2;
+    const isPortrait = this.currentOrientation === 'portrait';
 
-    // Заголовок в правом нижнем углу
-    const titlePaddingX = this.isMobile ? 24 : 48;
-    const titlePaddingY = this.isMobile ? 32 : 56;
-    const titleBaseX = this.screenWidth - titlePaddingX;
-    const titleBaseY = this.screenHeight - titlePaddingY;
+    // Адаптивное позиционирование заголовка
+    let titleBaseX, titleBaseY;
+    if (isPortrait) {
+      titleBaseX = centerX;
+      titleBaseY = this.screenHeight * 0.25;
+    } else {
+      const titlePaddingX = this.isMobile ? 24 : 48;
+      const titlePaddingY = this.isMobile ? 32 : 56;
+      titleBaseX = this.screenWidth - titlePaddingX;
+      titleBaseY = this.screenHeight - titlePaddingY;
+    }
 
-    const mainTitleFontSize = this.isMobile ? 80 : 96;
-    const subtitleFontSize = this.isMobile ? 42 : 56;
+    const mainTitleFontSize = isPortrait ? Math.min(this.screenWidth * 0.15, 120) : (this.isMobile ? 80 : 96);
+    const subtitleFontSize = isPortrait ? Math.min(this.screenWidth * 0.08, 60) : (this.isMobile ? 42 : 56);
 
     const title = this.add.text(titleBaseX, titleBaseY, 'КАДАСТР', {
       fontSize: `${mainTitleFontSize}px`,
@@ -104,7 +127,7 @@ export default class MenuScene extends Phaser.Scene {
         blur: 15,
         fill: true
       }
-    }).setOrigin(1, 1);
+    }).setOrigin(isPortrait ? 0.5 : 1, isPortrait ? 0.5 : 1);
 
     // Добавляем тонкую пульсацию для заголовка на десктопе
     if (!this.isMobile) {
@@ -118,7 +141,11 @@ export default class MenuScene extends Phaser.Scene {
       });
     }
 
-    const subtitle = this.add.text(titleBaseX, title.y - title.displayHeight - (this.isMobile ? 16 : 24), 'Игра', {
+    const subtitleY = isPortrait
+      ? title.y - title.displayHeight / 2 - (this.isMobile ? 10 : 15)
+      : title.y - title.displayHeight - (this.isMobile ? 16 : 24);
+
+    const subtitle = this.add.text(titleBaseX, subtitleY, 'Игра', {
       fontSize: `${subtitleFontSize}px`,
       color: '#9B2226',
       fontFamily: 'Georgia',
@@ -133,15 +160,19 @@ export default class MenuScene extends Phaser.Scene {
         fill: true
       }
     });
-    subtitle.setOrigin(1, 1);
+    subtitle.setOrigin(isPortrait ? 0.5 : 1, isPortrait ? 0.5 : 1);
 
     // Кнопки меню
-    const buttonWidth = this.isMobile
-      ? Math.min(this.screenWidth - 100, 800)
-      : Math.min(this.screenWidth - 200, 760);
+    const buttonWidth = Math.min(this.screenWidth * 0.85, this.isMobile ? 800 : 760);
     const buttonHeight = this.isMobile ? 75 : 92;
-    const buttonGap = this.isMobile ? 20 : 16;
-    const startY = centerY + (this.isMobile ? -50 : -30);
+    const buttonGap = isPortrait ? 25 : (this.isMobile ? 20 : 16);
+
+    let startY;
+    if (isPortrait) {
+      startY = title.y + (this.isMobile ? 120 : 150);
+    } else {
+      startY = centerY + (this.isMobile ? -50 : -30);
+    }
 
     const buttons = [
       { label: 'Продолжить игру', action: () => this.continueGame() },
@@ -302,7 +333,7 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     return new Promise((resolve) => {
-      this.time.delayedCall(3000, async () => {
+      this.time.delayedCall(100, async () => {
         if (action) {
           await action();
         }
